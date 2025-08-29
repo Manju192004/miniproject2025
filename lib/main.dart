@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,13 +7,21 @@ import 'package:project/Bloc/theme_cubit.dart';
 import 'package:project/Reusable/color.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:project/UI/SplashScreen/splash_screen.dart';
+import 'firebase_options.dart'; // ✅ Required for FirebaseOptions
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]);
+    ]
+  );
+
   Bloc.observer = AppBlocObserver();
   runApp(const App());
 }
@@ -38,11 +47,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeCubit, ThemeData>(builder: (_, theme) {
       return OverlaySupport.global(
@@ -54,8 +58,10 @@ class _MyAppState extends State<MyApp> {
             unselectedWidgetColor: appPrimaryColor,
             fontFamily: "Poppins",
           ),
-          darkTheme: ThemeData.light(),
-          themeMode: ThemeMode.light,
+          darkTheme: ThemeData.dark(),
+          themeMode: theme.brightness == Brightness.dark
+              ? ThemeMode.dark
+              : ThemeMode.light, // ✅ Dynamically switch
           builder: (context, child) {
             return MediaQuery(
               data: MediaQuery.of(context)
