@@ -3,7 +3,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+// --- AddDonationForm Widget ---
 class AddDonationForm extends StatefulWidget {
   const AddDonationForm({super.key});
 
@@ -23,28 +25,22 @@ class _AddDonationFormState extends State<AddDonationForm> {
   DateTime? _bestBefore;
   String _deliveryMethod = 'NGO will come and collect the food';
 
-  String? _pickedAddress;
   LatLng? _pickedLocation;
+  bool _isSubmitting = false;
 
-  // Get Current Location
-  Future<void> _getCurrentLocation() async {
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-    setState(() {
-      _pickedLocation = LatLng(position.latitude, position.longitude);
-    });
-
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
+  // Navigate to MapScreen and get result
+  Future<void> _pickAddressOnMap() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MapScreen()),
     );
 
-    setState(() {
-      _pickedAddress =
-      "${placemarks.first.name}, ${placemarks.first.locality}, ${placemarks.first.country}";
-      _addressController.text = _pickedAddress!;
-    });
+    if (result != null && result is Map) {
+      setState(() {
+        _pickedLocation = result['latLng'];
+        _addressController.text = result['address'];
+      });
+    }
   }
 
   // Pick Best Before Date and Time
@@ -76,13 +72,79 @@ class _AddDonationFormState extends State<AddDonationForm> {
     }
   }
 
-  // Submit Donation
-  void _submitForm() {
+  // Submit Donation to Firebase
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Donation Submitted Successfully!')),
-      );
+      if (_pickedLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a pickup address.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      try {
+        await FirebaseFirestore.instance.collection('adddonation').add({
+          'foodName': _foodNameController.text.trim(),
+          'quantity': _quantityController.text.trim(),
+          'foodType': _foodType,
+          'bestBefore': _bestBefore,
+          'deliveryMethod': _deliveryMethod,
+          'phoneNumber': _phoneController.text.trim(),
+          'pickupAddress': _addressController.text.trim(),
+          'pickupLocation': GeoPoint(_pickedLocation!.latitude, _pickedLocation!.longitude),
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Donation Submitted Successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _resetForm();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit donation: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _foodNameController.clear();
+    _quantityController.clear();
+    _phoneController.clear();
+    _addressController.clear();
+    setState(() {
+      _foodType = 'Veg';
+      _bestBefore = null;
+      _deliveryMethod = 'NGO will come and collect the food';
+      _pickedLocation = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    _foodNameController.dispose();
+    _quantityController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
   }
 
   @override
@@ -101,10 +163,10 @@ class _AddDonationFormState extends State<AddDonationForm> {
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.green, width: 2),
           ),
-          floatingLabelStyle: TextStyle(color: Colors.green), // ✅ Label turns green
+          floatingLabelStyle: TextStyle(color: Colors.green),
         ),
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.green), // ✅ Text typed in green
+          bodyMedium: TextStyle(color: Colors.green),
         ),
       ),
       home: Scaffold(
@@ -175,7 +237,7 @@ class _AddDonationFormState extends State<AddDonationForm> {
                       style: TextStyle(
                         color: _bestBefore == null
                             ? Colors.black54
-                            : Colors.green, // ✅ text green when selected
+                            : Colors.green,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -183,15 +245,15 @@ class _AddDonationFormState extends State<AddDonationForm> {
                 ),
                 const SizedBox(height: 16),
 
-                // Pickup Address
+                // Pickup Address (Now uses _pickAddressOnMap)
                 TextFormField(
                   controller: _addressController,
                   readOnly: true,
                   decoration: InputDecoration(
-                    labelText: 'Pickup Address (Tap map icon to fetch)',
+                    labelText: 'Pickup Address (Tap map icon to select)',
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.map, color: Colors.green),
-                      onPressed: _getCurrentLocation,
+                      onPressed: _pickAddressOnMap,
                     ),
                   ),
                   validator: (value) =>
@@ -199,7 +261,7 @@ class _AddDonationFormState extends State<AddDonationForm> {
                 ),
                 const SizedBox(height: 16),
 
-                // Delivery Method (Only One Option)
+                // Delivery Method
                 DropdownButtonFormField<String>(
                   value: _deliveryMethod,
                   decoration: const InputDecoration(
@@ -219,7 +281,7 @@ class _AddDonationFormState extends State<AddDonationForm> {
                 ),
                 const SizedBox(height: 16),
 
-                // ✅ Phone Number (after Delivery Method)
+                // Phone Number
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -239,14 +301,16 @@ class _AddDonationFormState extends State<AddDonationForm> {
 
                 // Submit Button
                 ElevatedButton(
-                  onPressed: _submitForm,
+                  onPressed: _isSubmitting ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30)),
                   ),
-                  child: const Text(
+                  child: _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
                     "Donate",
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
@@ -255,6 +319,193 @@ class _AddDonationFormState extends State<AddDonationForm> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// --- MapScreen Widget ---
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  GoogleMapController? _mapController;
+  LatLng? _selectedLocation;
+  Marker? _selectedMarker;
+  String _selectedAddress = "Tap on the map to select a location";
+  bool _isLoading = true;
+  CameraPosition _initialCameraPosition = const CameraPosition(
+    target: LatLng(20.5937, 78.9629), // Default center on India
+    zoom: 5.0,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndRequestLocationPermission();
+  }
+
+  Future<void> _checkAndRequestLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location services are disabled. Please enable them to get your current location.')),
+        );
+      }
+      setState(() { _isLoading = false; });
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied.')),
+          );
+        }
+        setState(() { _isLoading = false; });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permissions are permanently denied, please enable them from app settings.')),
+        );
+      }
+      setState(() { _isLoading = false; });
+      return;
+    }
+
+    // Permission granted, now get the current location
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+
+      _onMapTapped(currentLatLng);
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(currentLatLng, 15.0));
+
+      setState(() {
+        _isLoading = false;
+        _initialCameraPosition = CameraPosition(target: currentLatLng, zoom: 15.0);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching current location: $e')),
+        );
+      }
+      setState(() { _isLoading = false; });
+    }
+  }
+
+  Future<void> _getAddressFromLatLng(LatLng latLng) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latLng.latitude,
+        latLng.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        setState(() {
+          _selectedAddress =
+          "${place.name}, ${place.locality}, ${place.country}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _selectedAddress = "Address not found";
+      });
+    }
+  }
+
+  void _onMapTapped(LatLng latLng) {
+    setState(() {
+      _selectedLocation = latLng;
+      _selectedMarker = Marker(
+        markerId: const MarkerId('selected-location'),
+        position: latLng,
+      );
+      _getAddressFromLatLng(latLng);
+    });
+  }
+
+  void _confirmLocation() {
+    if (_selectedLocation != null) {
+      Navigator.pop(context, {
+        'latLng': _selectedLocation,
+        'address': _selectedAddress,
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please tap on the map to select a location.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Select Pickup Address",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.green,
+        actions: [
+          IconButton(
+            onPressed: _confirmLocation,
+            icon: const Icon(Icons.check, color: Colors.white),
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      )
+          : Stack(
+        children: [
+          GoogleMap(
+            onMapCreated: (controller) => _mapController = controller,
+            initialCameraPosition: _initialCameraPosition,
+            onTap: _onMapTapped,
+            markers: _selectedMarker != null ? {_selectedMarker!} : {},
+          ),
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Card(
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  _selectedAddress,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
