@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "209955536387",
+    "project_id": "foodmanagement-2025",
+    "storage_bucket": "foodmanagement-2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209955536387:android:eb32e8b0e406fa5df2d836",
+        "android_client_info": {
+          "package_name": "com.example.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhHpGZ5OYxjmsh342i0PXkh8gAUqbVXEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

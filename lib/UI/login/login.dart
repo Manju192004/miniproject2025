@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/UI/buttomnavigationbar/buttomnavigation.dart';
 import 'package:project/UI/Register/register.dart';
 
@@ -11,6 +13,71 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   String selectedRole = "Donor";
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  bool _loading = false;
+
+  Future<void> _login() async {
+    try {
+      setState(() => _loading = true);
+
+      // Step 1: Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      User? user = userCredential.user;
+      if (user == null) {
+        throw Exception("User not found");
+      }
+
+      // Step 2: Check Firestore collection based on selectedRole
+      String collectionName = "";
+      if (selectedRole == "Donor") {
+        collectionName = "donor";
+      } else if (selectedRole == "NGO") {
+        collectionName = "ngo";
+      } else if (selectedRole == "Admin") {
+        collectionName = "admin";
+      }
+
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        // User exists in FirebaseAuth but not in the selected role collection
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("You are not registered as $selectedRole")),
+        );
+        return;
+      }
+
+      // ✅ Success: user logged in with correct role
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed";
+      if (e.code == 'user-not-found') {
+        message = "No user found with this email.";
+      } else if (e.code == 'wrong-password') {
+        message = "Incorrect password.";
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView( // ✅ fix overflow
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -36,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Title (role + Login)
                 Text(
-                  "$selectedRole Login", // ✅ change according to role
+                  "$selectedRole Login",
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -61,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Username/Email
                 _buildTextField(
+                  controller: _emailController,
                   hint: "Username or Email",
                   icon: Icons.person_outline,
                   obscure: false,
@@ -69,6 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Password
                 _buildTextField(
+                  controller: _passwordController,
                   hint: "Password",
                   icon: Icons.lock_outline,
                   obscure: true,
@@ -80,21 +149,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: MediaQuery.of(context).size.width * 0.8,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: _loading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: _loading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
                       "Log in",
                       style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
@@ -191,6 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required String hint,
     required IconData icon,
     required bool obscure,
+    required TextEditingController controller,
   }) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
@@ -199,6 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscure,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.green),

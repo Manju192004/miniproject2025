@@ -1,12 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? userName;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final uid = user.uid;
+
+        // Check in donor collection
+        DocumentSnapshot donorDoc = await FirebaseFirestore.instance
+            .collection('donor')
+            .doc(uid)
+            .get();
+
+        if (donorDoc.exists) {
+          setState(() {
+            userName = donorDoc['name'];
+            isLoading = false;
+          });
+          return;
+        }
+
+        // Check in ngo collection
+        DocumentSnapshot ngoDoc = await FirebaseFirestore.instance
+            .collection('ngo')
+            .doc(uid)
+            .get();
+
+        if (ngoDoc.exists) {
+          setState(() {
+            userName = ngoDoc['name'];
+            isLoading = false;
+          });
+          return;
+        }
+
+        // Check in admin collection
+        DocumentSnapshot adminDoc = await FirebaseFirestore.instance
+            .collection('admin')
+            .doc(uid)
+            .get();
+
+        if (adminDoc.exists) {
+          setState(() {
+            userName = adminDoc['name'];
+            isLoading = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching user name: $e");
+    }
+
+    setState(() {
+      userName = "User"; // fallback
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green, // Use Colors.green for the whole screen background
+      backgroundColor: Colors.green,
       appBar: AppBar(
         title: const Text(
           "Excess Food Sharing",
@@ -22,19 +96,21 @@ class HomeScreen extends StatelessWidget {
             color: Colors.green,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
             width: double.infinity,
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Welcome back, Manju",
-                  style: TextStyle(
+                  isLoading
+                      ? "Loading..."
+                      : "Welcome back, $userName",
+                  style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
+                const SizedBox(height: 8),
+                const Text(
                   "Your kindness feeds hope.",
                   style: TextStyle(
                     fontSize: 18,
@@ -60,28 +136,28 @@ class HomeScreen extends StatelessWidget {
                   _buildListItem(
                     context,
                     label: "Add Donation",
-                    icon: Icons.local_dining, // Placeholder icon
+                    icon: Icons.local_dining,
                     iconColor: Colors.black,
                     circleColor: Colors.yellow,
                   ),
                   _buildListItem(
                     context,
                     label: "View Requests",
-                    icon: Icons.list_alt, // Placeholder icon
+                    icon: Icons.list_alt,
                     iconColor: Colors.black,
                     circleColor: Colors.orange,
                   ),
                   _buildListItem(
                     context,
                     label: "Post Feedback",
-                    icon: Icons.chat, // Placeholder icon
+                    icon: Icons.chat,
                     iconColor: Colors.black,
                     circleColor: Colors.yellow,
                   ),
                   _buildListItem(
                     context,
                     label: "Profile",
-                    icon: Icons.person, // Placeholder icon
+                    icon: Icons.person,
                     iconColor: Colors.white,
                     circleColor: Colors.blue,
                   ),

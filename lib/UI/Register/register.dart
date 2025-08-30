@@ -7,7 +7,6 @@ import 'package:firebase_core/firebase_core.dart'; // Add this import
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({Key? key}) : super(key: key);
-
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
 }
