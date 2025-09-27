@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -152,23 +153,23 @@ class _AddDonationFormState extends State<AddDonationForm> {
     String formattedDateTime = _bestBefore == null
         ? 'Select Date & Time'
         : DateFormat('dd/MM/yyyy hh:mm a').format(_bestBefore!);
-
     return MaterialApp(
-      theme: ThemeData(
-        inputDecorationTheme: const InputDecorationTheme(
-          labelStyle: TextStyle(color: Colors.grey),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey),
+        debugShowCheckedModeBanner: false,  // 👈 add this line
+        theme: ThemeData(
+          inputDecorationTheme: const InputDecorationTheme(
+            labelStyle: TextStyle(color: Colors.grey),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.green, width: 2),
+            ),
+            floatingLabelStyle: TextStyle(color: Colors.green),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.green, width: 2),
+          textTheme: const TextTheme(
+            bodyMedium: TextStyle(color: Colors.green),
           ),
-          floatingLabelStyle: TextStyle(color: Colors.green),
         ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.green),
-        ),
-      ),
       home: Scaffold(
         appBar: AppBar(
           title: const Text(
@@ -236,6 +237,7 @@ class _AddDonationFormState extends State<AddDonationForm> {
                       formattedDateTime,
                       style: TextStyle(
                         color: _bestBefore == null
+
                             ? Colors.black54
                             : Colors.green,
                         fontWeight: FontWeight.w600,

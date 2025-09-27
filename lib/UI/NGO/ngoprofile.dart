@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/UI/Profile/edit_profile.dart'; // Correct path to your EditProfileScreen
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class NgoProfileScreen extends StatelessWidget {
+  const NgoProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class ProfileScreen extends StatelessWidget {
           ? const Center(child: Text("No user logged in"))
           : FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
-            .collection("donor")
+            .collection("ngoreg")
             .doc(user.uid)
             .get(),
         builder: (context, snapshot) {

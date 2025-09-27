@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:project/UI/buttomnavigationbar/buttomnavigation.dart';
+import 'package:project/UI/buttomnavigationbar/buttomnavigation.dart'; // Donor Dashboard
 import 'package:project/UI/Register/register.dart';
+import 'package:project/UI/NGO/NgoBottomnavigation.dart'; // NGO Dashboard
+// import 'package:project/UI/Admin/admin_dashboard.dart'; // Admin Dashboard
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (selectedRole == "Donor") {
         collectionName = "donor";
       } else if (selectedRole == "NGO") {
-        collectionName = "ngo";
+        collectionName = "ngoreg";
       } else if (selectedRole == "Admin") {
         collectionName = "admin";
       }
@@ -59,10 +61,18 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // ✅ Success: user logged in with correct role
+      Widget nextScreen;
+      if (selectedRole == "Donor") {
+        nextScreen = const DashboardScreen(); // Donor dashboard
+      } else if (selectedRole == "NGO") {
+        nextScreen = const NgoDashboardScreen(); // NGO dashboard
+      } else {
+        nextScreen = const Placeholder(); // Admin dashboard
+      }
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(builder: (context) => nextScreen),
       );
     } on FirebaseAuthException catch (e) {
       String message = "Login failed";

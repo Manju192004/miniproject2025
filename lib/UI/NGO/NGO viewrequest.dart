@@ -8,7 +8,7 @@ class DonationRequestScreen extends StatefulWidget {
 }
 
 class _DonationRequestScreenState extends State<DonationRequestScreen> {
-  // Dummy request list with 4 items + dateTime field
+  // Dummy request list with 4 items
   final List<Map<String, String>> requests = [
     {
       "type": "NGO",
@@ -18,7 +18,6 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
       "required": "30 plates",
       "location": "Chennai, TN",
       "phone": "9876543210",
-      "dateTime": "01-09-2025 10:30 AM",
     },
     {
       "type": "Individual",
@@ -28,7 +27,6 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
       "required": "15 plates",
       "location": "Coimbatore, TN",
       "phone": "9123456780",
-      "dateTime": "01-09-2025 02:15 PM",
     },
     {
       "type": "NGO",
@@ -38,7 +36,6 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
       "required": "50 plates",
       "location": "Madurai, TN",
       "phone": "9012345678",
-      "dateTime": "02-09-2025 09:00 AM",
     },
     {
       "type": "Individual",
@@ -48,7 +45,6 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
       "required": "20 plates",
       "location": "Trichy, TN",
       "phone": "9098765432",
-      "dateTime": "02-09-2025 07:45 PM",
     },
   ];
 
@@ -58,10 +54,10 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text(
-          'Excess Food Sharing',
+          'View Requests', // ✅ Updated title bar
           style: TextStyle(color: Colors.white),
         ),
-        centerTitle: false,
+        centerTitle: true,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -110,8 +106,6 @@ class _DonationRequestScreenState extends State<DonationRequestScreen> {
           _buildInfoRow("Pickup Location", request['location']!),
           const SizedBox(height: 10),
           _buildInfoRow("Phone", request['phone']!),
-          const SizedBox(height: 10),
-          _buildInfoRow("Date & Time", request['dateTime']!), // ✅ Added dateTime
           const SizedBox(height: 20),
           _buildActionButtons(),
         ],

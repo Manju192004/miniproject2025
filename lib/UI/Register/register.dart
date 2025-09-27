@@ -1,12 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:project/ModelClass/Donor/donor.dart';
 import 'package:project/UI/Login/login.dart';
-import 'package:firebase_core/firebase_core.dart'; // Add this import
+import 'package:firebase_core/firebase_core.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({Key? key}) : super(key: key);
+
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
 }
@@ -17,17 +19,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
   bool _isLoading = false;
 
   // Controllers
-  final TextEditingController donorTypeController = TextEditingController(text: 'Individual');
+  final TextEditingController donorTypeController =
+  TextEditingController(text: 'Individual');
   final TextEditingController nameOrgController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+  TextEditingController();
 
-  // Don't initialize auth here, initialize it after Firebase.initializeApp()
   FirebaseAuth? auth;
-  Donor? donor;
+
+  // NGO proof upload
+  FilePickerResult? _pickedFile;
+  String? _fileName;
+  String? _fileUrl;
 
   @override
   void initState() {
@@ -37,26 +44,21 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   Future<void> _initializeFirebase() async {
     try {
-      // Check if Firebase is already initialized
       try {
         Firebase.app();
         setState(() {
           _isFirebaseInitialized = true;
-          auth = FirebaseAuth.instance; // Initialize auth after Firebase is ready
+          auth = FirebaseAuth.instance;
         });
         return;
-      } catch (e) {
-        // Firebase not initialized, continue to initialize
-      }
-
+      } catch (_) {}
       await Firebase.initializeApp();
       setState(() {
         _isFirebaseInitialized = true;
-        auth = FirebaseAuth.instance; // Initialize auth after Firebase is ready
+        auth = FirebaseAuth.instance;
       });
     } catch (e) {
       print("Firebase initialization error: $e");
-      // Handle error appropriately
     }
   }
 
@@ -72,6 +74,20 @@ class _RegistrationPageState extends State<RegistrationPage> {
     super.dispose();
   }
 
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _pickedFile = result;
+        _fileName = result.files.single.name;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isFirebaseInitialized) {
@@ -79,7 +95,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: const [
               CircularProgressIndicator(),
               SizedBox(height: 20),
               Text("Initializing Firebase..."),
@@ -121,7 +137,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     ],
                   ),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Text(
@@ -136,12 +151,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       _buildSelectionButtons(),
                       const SizedBox(height: 20),
                       Text(
-                        isDonor ? 'DONOR REGISTRATION' : 'NGO REGISTRATION',
+                        isDonor
+                            ? 'DONOR REGISTRATION'
+                            : 'NGO REGISTRATION',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
-                        textAlign: TextAlign.left,
                       ),
                       const SizedBox(height: 20),
                       isDonor ? _buildDonorForm() : _buildNgoForm(),
@@ -188,7 +204,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
             child: const Text('Donor', style: TextStyle(fontSize: 16)),
           ),
         ),
-
         const SizedBox(width: 8),
         Expanded(
           child: ElevatedButton(
@@ -223,31 +238,33 @@ class _RegistrationPageState extends State<RegistrationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Type of Donor', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Type of Donor',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           _buildDropdownField(
             items: const ['Individual', 'Organization'],
             hint: donorTypeController.text,
           ),
           const SizedBox(height: 16),
-          _buildTextField('Name / Organization', 'Your Name or Organization', controller: nameOrgController),
+          _buildTextField('Name / Organization', 'Your Name or Organization',
+              controller: nameOrgController),
           const SizedBox(height: 16),
-          _buildTextField('Email ID', 'you@example.com', controller: emailController),
+          _buildTextField('Email ID', 'you@example.com',
+              controller: emailController),
           const SizedBox(height: 16),
-          _buildTextField('Address', 'Your Address', controller: addressController),
+          _buildTextField('Address', 'Your Address',
+              controller: addressController),
           const SizedBox(height: 16),
-          _buildTextField('Phone No', 'Your Phone Number', controller: phoneController),
+          _buildTextField('Phone No', 'Your Phone Number',
+              controller: phoneController),
           const SizedBox(height: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTextField('Password', 'Enter Password', obscureText: true, controller: passwordController),
-              const SizedBox(height: 16),
-              _buildTextField('Confirm Password', 'Confirm Password', obscureText: true, controller: confirmPasswordController),
-              const SizedBox(height: 30),
-              _buildRegisterButton(),
-            ],
-          ),
+          _buildTextField('Password', 'Enter Password',
+              obscureText: true, controller: passwordController),
+          const SizedBox(height: 16),
+          _buildTextField('Confirm Password', 'Confirm Password',
+              obscureText: true, controller: confirmPasswordController),
+          const SizedBox(height: 30),
+          _buildRegisterButton(),
         ],
       ),
     );
@@ -258,49 +275,63 @@ class _RegistrationPageState extends State<RegistrationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Type of NGO', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Type of NGO',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          _buildDropdownField(
-            items: const ['Organization'],
-            hint: 'Organization',
-          ),
+          _buildDropdownField(items: const ['Organization'], hint: 'Organization'),
           const SizedBox(height: 16),
-          _buildTextField('Name / Organization', 'NGO Name or Organization', controller: nameOrgController),
+          _buildTextField('Name / Organization', 'NGO Name or Organization',
+              controller: nameOrgController),
           const SizedBox(height: 16),
-          _buildTextField('Email ID', 'ngo@example.com', controller: emailController),
+          _buildTextField('Email ID', 'ngo@example.com',
+              controller: emailController),
           const SizedBox(height: 16),
-          _buildTextField('Address', 'NGO Address', controller: addressController),
+          _buildTextField('Address', 'NGO Address',
+              controller: addressController),
           const SizedBox(height: 16),
-          _buildTextField('Phone No.', 'NGO Phone Number', controller: phoneController),
+          _buildTextField('Phone No.', 'NGO Phone Number',
+              controller: phoneController),
           const SizedBox(height: 16),
-          const Text('Upload Government Proof', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Upload Government Proof',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Container(
-            height: 50,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: const Row(
-              children: [
-                SizedBox(width: 10),
-                Text('Choose File', style: TextStyle(color: Colors.blue)),
-                SizedBox(width: 10),
-                Text('No file chosen', style: TextStyle(color: Colors.grey)),
-              ],
+          InkWell(
+            onTap: _pickFile,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 10),
+                  Text(
+                    'Choose File',
+                    style: TextStyle(color: Colors.blue.shade700),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _fileName ?? 'No file chosen',
+                      style: const TextStyle(color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildTextField('Password', 'Enter Password', obscureText: true, controller: passwordController),
-              const SizedBox(height: 16),
-              _buildTextField('Confirm Password', 'Confirm Password', obscureText: true, controller: confirmPasswordController),
-              const SizedBox(height: 30),
-              _buildRegisterButton(),
-            ],
-          ),
+          _buildTextField('Password', 'Enter Password',
+              obscureText: true, controller: passwordController),
+          const SizedBox(height: 16),
+          _buildTextField('Confirm Password', 'Confirm Password',
+              obscureText: true, controller: confirmPasswordController),
+          const SizedBox(height: 30),
+          _buildRegisterButton(),
         ],
       ),
     );
@@ -326,14 +357,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
               borderRadius: BorderRadius.circular(8.0),
               borderSide: const BorderSide(color: Colors.green, width: 2.0),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDropdownField({required List<String> items, required String hint}) {
+  Widget _buildDropdownField(
+      {required List<String> items, required String hint}) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         border: OutlineInputBorder(
@@ -342,7 +375,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
-      value: donorTypeController.text.isNotEmpty ? donorTypeController.text : items.first,
+      value: donorTypeController.text.isNotEmpty
+          ? donorTypeController.text
+          : items.first,
       onChanged: (String? newValue) {
         if (newValue != null) {
           setState(() {
@@ -364,7 +399,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
       width: MediaQuery.of(context).size.width * 0.8,
       height: 50,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : () async {
+        onPressed: _isLoading
+            ? null
+            : () async {
           final donorType = donorTypeController.text.trim();
           final name = nameOrgController.text.trim();
           final email = emailController.text.trim();
@@ -373,8 +410,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
           final password = passwordController.text;
           final confirmPassword = confirmPasswordController.text;
 
-          // Basic validation
-          if (donorType.isEmpty || name.isEmpty || email.isEmpty || address.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+          if (donorType.isEmpty ||
+              name.isEmpty ||
+              email.isEmpty ||
+              address.isEmpty ||
+              phone.isEmpty ||
+              password.isEmpty ||
+              confirmPassword.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Please fill in all fields')),
             );
@@ -383,16 +425,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
           if (password != confirmPassword) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Passwords do not match')),
+              const SnackBar(
+                  content: Text('Passwords do not match')),
             );
             return;
           }
 
-          // Email format check simple regex
-          final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+          final emailRegex =
+          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
           if (!emailRegex.hasMatch(email)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please enter a valid email address')),
+              const SnackBar(
+                  content: Text('Please enter a valid email address')),
+            );
+            return;
+          }
+
+          if (!isDonor && _pickedFile == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Please upload government proof')),
             );
             return;
           }
@@ -402,40 +454,69 @@ class _RegistrationPageState extends State<RegistrationPage> {
           });
 
           try {
-            // Register user in Firebase Auth - use auth! since we know it's initialized
-            UserCredential userCredential = await auth!.createUserWithEmailAndPassword(
+            UserCredential userCredential =
+            await auth!.createUserWithEmailAndPassword(
               email: email,
               password: password,
             );
 
             final uid = userCredential.user!.uid;
 
-            // Prepare data for Firestore
-            final userData = {
-              'uid': uid,
-              'type': isDonor ? 'Donor' : 'NGO',
-              'donorType': donorType,
-              'name': name,
-              'email': email,
-              'address': address,
-              'phone': phone,
-              'createdAt': FieldValue.serverTimestamp(),
-            };
+            // Upload NGO proof if NGO
+            if (!isDonor && _pickedFile != null) {
+              final path =
+                  "ngo_proofs/$uid/${_pickedFile!.files.single.name}";
+              final fileBytes = _pickedFile!.files.single.bytes;
 
-            // Save user data in Firestore
+              if (fileBytes != null) {
+                final ref =
+                FirebaseStorage.instance.ref().child(path);
+                await ref.putData(fileBytes);
+                _fileUrl = await ref.getDownloadURL();
+              }
+            }
+
+            // Different data for donor and NGO
+            Map<String, dynamic> userData;
+            if (isDonor) {
+              userData = {
+                'uid': uid,
+                'type': 'Donor',
+                'donorType': donorType,
+                'name': name,
+                'email': email,
+                'address': address,
+                'phone': phone,
+                'createdAt': FieldValue.serverTimestamp(),
+              };
+            } else {
+              userData = {
+                'uid': uid,
+                'type': 'NGO',
+                'donorType': donorType,
+                'name': name,
+                'email': email,
+                'address': address,
+                'phone': phone,
+                'govtProofUrl': _fileUrl ?? '',
+                'createdAt': FieldValue.serverTimestamp(),
+              };
+            }
+
             await FirebaseFirestore.instance
-                .collection(isDonor ? 'donor' : 'ngos')
+                .collection(isDonor ? 'donor' : 'ngoreg')
                 .doc(uid)
                 .set(userData);
 
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Registration successful!')),
+              const SnackBar(
+                  content: Text('Registration successful!')),
             );
 
-            // Navigate to login screen
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const LoginScreen()),
             );
           } on FirebaseAuthException catch (e) {
             String message = 'Registration failed';
