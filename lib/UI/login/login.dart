@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/UI/buttomnavigationbar/buttomnavigation.dart'; // Donor Dashboard
 import 'package:project/UI/Register/register.dart';
 import 'package:project/UI/NGO/NgoBottomnavigation.dart'; // NGO Dashboard
-// import 'package:project/UI/Admin/admin_dashboard.dart'; // Admin Dashboard
+import '../NGO/Admin/Adminbuttomnavigation.dart' show AdminDashboardScreen; // Admin Dashboard
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,8 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
         nextScreen = const DashboardScreen(); // Donor dashboard
       } else if (selectedRole == "NGO") {
         nextScreen = const NgoDashboardScreen(); // NGO dashboard
+      } else if (selectedRole == "Admin") {
+        nextScreen = const AdminDashboardScreen(); // Admin dashboard
       } else {
-        nextScreen = const Placeholder(); // Admin dashboard
+        nextScreen = const DashboardScreen(); // Default fallback
       }
 
       Navigator.pushReplacement(
@@ -83,6 +85,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login failed: $e")),
       );
     } finally {
       setState(() => _loading = false);

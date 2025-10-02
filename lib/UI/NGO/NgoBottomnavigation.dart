@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:project/UI/DonationRequestScreen/DonationRequestScreen.dart';
 import 'package:project/UI/Feedback/feedback.dart';
 import 'package:project/UI/Home_screen/home_screen.dart';
-import 'package:project/UI/NGO/NGO%20viewrequest.dart' hide DonationRequestScreen;
+import 'package:project/UI/NGO/NGOviewrequest.dart' show NGOViewRequestScreen;
+
 import 'package:project/UI/NGO/ngohomescreen.dart';
 import 'package:project/UI/NGO/ngoprofile.dart' show NgoProfileScreen;
-import 'package:project/UI/NGO/request_status.dart' show RequestStatus;
-
-import 'package:project/UI/Profile/profile.dart';
-import 'package:project/UI/adddonation/add_donation.dart';
-import 'package:project/main.dart' show MyApp;
+import 'package:project/UI/NGO/ngorequest_status.dart';
 
 class NgoDashboardScreen extends StatefulWidget {
   const NgoDashboardScreen({super.key});
@@ -21,16 +17,51 @@ class NgoDashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<NgoDashboardScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
+  late final List<Widget> _pages;
 
+  @override
+  void initState() {
+    super.initState();
 
-    NgoHomeScreen(),
-    DonationRequestScreen(),
-    //MyApp(),
-    RequestStatus(),
-    FeedbackFormScreen(),
-    NgoProfileScreen(),
-  ];
+    // Prepare multiple requests for RequestStatus
+    final List<RequestItem> requestItems = [
+      RequestItem(
+        name: 'Rice Biryani',
+        plates: '10 plates',
+        status: 'Pending',
+        dateTime: '02-10-2025 10:00 AM',
+        donorName: 'Donor Name',
+        contact: '9876543210',
+        location: 'Chennai, TN',
+      ),
+      RequestItem(
+        name: 'Dosa',
+        plates: '15 plates',
+        status: 'Approved',
+        dateTime: '01-10-2025 08:30 AM',
+        donorName: 'Another Donor',
+        contact: '9123456780',
+        location: 'Coimbatore, TN',
+      ),
+      RequestItem(
+        name: 'Idly',
+        plates: '12 plates',
+        status: 'Rejected',
+        dateTime: '30-09-2025 09:15 AM',
+        donorName: 'Third Donor',
+        contact: '9012345678',
+        location: 'Madurai, TN',
+      ),
+    ];
+
+    _pages = [
+      const NgoHomeScreen(),
+      const NGOViewRequestScreen(),
+      RequestStatus(items: requestItems),
+      const FeedbackFormScreen(),
+      const NgoProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +85,6 @@ class _DashboardScreenState extends State<NgoDashboardScreen> {
       ),
     );
   }
-}
-
-class RequestView {
-  const RequestView();
 }
 
 class CustomBottomNavigationBar extends StatelessWidget {
@@ -91,8 +118,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.home, 'NgoHome', 0),
-          _buildNavItem(Icons.remove_red_eye_sharp, 'View Donations', 1),
+          _buildNavItem(Icons.home, 'Home', 0),
+          _buildNavItem(Icons.remove_red_eye_sharp, 'View Requests', 1),
           _buildNavItem(Icons.list_alt, 'Request Status', 2),
           _buildNavItem(Icons.feedback, 'Feedback', 3),
           _buildNavItem(Icons.person, 'Profile', 4),
@@ -115,7 +142,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            label,
             label,
             style: TextStyle(
               color: isSelected ? Colors.green : Colors.black,

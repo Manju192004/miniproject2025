@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class AdminHomeScreen extends StatefulWidget {
+  const AdminHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<AdminHomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<AdminHomeScreen> {
   String? userName;
   bool isLoading = true;
 
@@ -135,29 +135,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildListItem(
                     context,
-                    label: "Add Donation",
-                    icon: Icons.local_dining,
+                    label: "ViewRequest",
+                    icon: Icons.remove_red_eye,
                     iconColor: Colors.black,
                     circleColor: Colors.yellow,
                   ),
                   _buildListItem(
                     context,
-                    label: "View Requests",
-                    icon: Icons.list_alt,
+                    label: "Redonation",
+                    icon: Icons.autorenew,
                     iconColor: Colors.black,
                     circleColor: Colors.orange,
                   ),
                   _buildListItem(
                     context,
-                    label: "Post Feedback",
-                    icon: Icons.chat,
+                    label: "DonorProfile",
+                    icon: Icons.person,
                     iconColor: Colors.black,
                     circleColor: Colors.yellow,
                   ),
                   _buildListItem(
                     context,
-                    label: "Profile",
+                    label: "Feedback",
                     icon: Icons.chat,
+                    iconColor: Colors.white,
+                    circleColor: Colors.blue,
+                  ),
+                  _buildListItem(
+                    context,
+                    label: "NgoProfile",
+                    icon: Icons.person,
                     iconColor: Colors.white,
                     circleColor: Colors.blue,
                   ),

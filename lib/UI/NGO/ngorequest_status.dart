@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class RequestItem {
   final String name;
   final String plates;
@@ -22,66 +21,25 @@ class RequestItem {
 }
 
 class RequestStatus extends StatelessWidget {
-  const RequestStatus({super.key});
+  final List<RequestItem> items; // List of requests
+
+  const RequestStatus({super.key, required this.items});
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'Pending':
+    switch (status.toLowerCase()) {
+      case 'pending':
         return Colors.amber;
-      case 'Approved':
+      case 'approved':
         return Colors.green;
-      case 'Rejected':
+      case 'rejected':
         return Colors.red;
       default:
         return Colors.grey;
     }
   }
 
-  String _displayStatus(String status) {
-    return status.isEmpty ? 'Not Updated' : status;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final List<RequestItem> items = [
-      RequestItem(
-        name: 'Dosa',
-        plates: '10 plates',
-        status: 'Pending',
-        dateTime: '13 Aug 2025 8:27 AM',
-        donorName: 'T Vgnhesh Aarif',
-        contact: '9876547689',
-        location: 'Chennai, TN',
-      ),
-      RequestItem(
-        name: 'Idly',
-        plates: '15 plates',
-        status: 'Approved',
-        dateTime: '18 Aug 2025 8:21 AM',
-        donorName: 'Dön P Donnate',
-        contact: '9876547690',
-        location: 'Coimbatore, TN',
-      ),
-      RequestItem(
-        name: 'Biriyani',
-        plates: '6 plates',
-        status: 'Rejected',
-        dateTime: '18 Nov 2025 12:00 PM',
-        donorName: 'Riyan Subhashini',
-        contact: '9876547691',
-        location: 'Madurai, TN',
-      ),
-      RequestItem(
-        name: 'Biriyani',
-        plates: '6 plates',
-        status: '',
-        dateTime: '',
-        donorName: 'Riyan Subhashni',
-        contact: '9876547691',
-        location: 'Salem, TN',
-      ),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -94,8 +52,8 @@ class RequestStatus extends StatelessWidget {
         toolbarHeight: 90,
       ),
       body: ListView.builder(
-        itemCount: items.length,
         padding: const EdgeInsets.all(12),
+        itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
           return Card(
@@ -109,27 +67,25 @@ class RequestStatus extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${item.name} - ${item.plates}',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  Text('${item.name} - ${item.plates}',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Container(
                     padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _statusColor(_displayStatus(item.status)),
+                      color: _statusColor(item.status),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      _displayStatus(item.status),
+                      item.status.isEmpty ? 'Not Updated' : item.status,
                       style: const TextStyle(
                           color: Colors.white, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  if (item.dateTime.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                  const SizedBox(height: 12),
+                  if (item.dateTime.isNotEmpty)
                     Row(
                       children: [
                         const Icon(Icons.calendar_today, size: 16),
@@ -137,7 +93,6 @@ class RequestStatus extends StatelessWidget {
                         Text('Date & Time: ${item.dateTime}'),
                       ],
                     ),
-                  ],
                   const SizedBox(height: 6),
                   Row(
                     children: [

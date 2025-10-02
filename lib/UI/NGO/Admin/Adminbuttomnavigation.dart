@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:project/UI/DonationStatus/DonationStatus.dart' show DonorDonationStatusScreen;
 import 'package:project/UI/Feedback/feedback.dart';
 import 'package:project/UI/Home_screen/home_screen.dart';
+import 'package:project/UI/NGO/Admin/AdminHomepage.dart' show  AdminHomeScreen;
+import 'package:project/UI/NGO/Admin/AdminRedonation.dart' show RedonationScreen;
+import 'package:project/UI/NGO/Admin/AdminViewRequest.dart' show AdminViewRequestsScreen;
+import 'package:project/UI/NGO/Admin/ViewDonorProfile.dart' show DonorProfileScreen;
+import 'package:project/UI/NGO/Admin/ViewNGOprofile.dart' show NGOProfileScreen;
+
 import 'package:project/UI/Profile/profile.dart';
 import 'package:project/UI/adddonation/add_donation.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+class AdminDashboardScreen extends StatefulWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<AdminDashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<AdminDashboardScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeScreen(),
+  final List<Widget> _pages = [
+    //HomeScreen(),
     // TODO: Replace with DonationsScreen widget
-    AddDonationForm(),
+    //AddDonationForm(),
     // TODO: Replace with RequestScreen widget
-    DonorDonationStatusScreen(),
+    //DonationRequestScreen(),
     // TODO: Replace with FeedbackScreen widget
-    FeedbackFormScreen(),
+    //FeedbackFormScreen(),
     // TODO: Replace with ProfileScreen widget
-    ProfileScreen(),
+
+    AdminHomeScreen(),
+    AdminViewRequestsScreen(),
+    RedonationScreen(),
+    DonorProfileScreen(),
+    Placeholder(),
+    NGOProfileScreen(),
   ];
 
   @override
@@ -84,10 +95,11 @@ class CustomBottomNavigationBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
-          _buildNavItem(Icons.favorite, 'Donations', 1),
-          _buildNavItem(Icons.remove_red_eye_sharp, 'Donationstatus', 2),
-          _buildNavItem(Icons.feedback, 'Feedback', 3),
-          _buildNavItem(Icons.person, 'Profile', 4),
+          _buildNavItem(Icons.remove_red_eye, 'View Request', 1),
+          _buildNavItem(Icons.autorenew, 'Redonation', 2),
+          _buildNavItem(Icons.person, 'Donorprofile', 3),
+          _buildNavItem(Icons.chat, 'feedback', 4),
+          _buildNavItem(Icons.person, 'NGOProfile', 5),
         ],
       ),
     );
