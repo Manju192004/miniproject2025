@@ -10,6 +10,8 @@ import 'package:project/UI/NGO/Admin/ViewNGOprofile.dart' show NGOProfileScreen;
 import 'package:project/UI/Profile/profile.dart';
 import 'package:project/UI/adddonation/add_donation.dart';
 
+import 'AdminViewfeedback.dart';
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -21,20 +23,11 @@ class _DashboardScreenState extends State<AdminDashboardScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    //HomeScreen(),
-    // TODO: Replace with DonationsScreen widget
-    //AddDonationForm(),
-    // TODO: Replace with RequestScreen widget
-    //DonationRequestScreen(),
-    // TODO: Replace with FeedbackScreen widget
-    //FeedbackFormScreen(),
-    // TODO: Replace with ProfileScreen widget
-
     AdminHomeScreen(),
     AdminViewRequestsScreen(),
-    RedonationScreen(),
+    // RedonationScreen(),
     DonorProfileScreen(),
-    Placeholder(),
+    FeedbackScreen(),
     NGOProfileScreen(),
   ];
 
@@ -96,10 +89,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.remove_red_eye, 'View Request', 1),
-          _buildNavItem(Icons.autorenew, 'Redonation', 2),
-          _buildNavItem(Icons.person, 'Donorprofile', 3),
-          _buildNavItem(Icons.chat, 'feedback', 4),
-          _buildNavItem(Icons.person, 'NGOProfile', 5),
+          // _buildNavItem(Icons.autorenew, 'Redonation', 2),
+          _buildNavItem(Icons.person, 'Donorprofile', 2),
+          _buildNavItem(Icons.chat, 'feedback', 3),
+          _buildNavItem(Icons.person, 'NGOProfile', 4),
         ],
       ),
     );

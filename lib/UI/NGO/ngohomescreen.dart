@@ -19,62 +19,55 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     _fetchUserName();
   }
 
-  Future<void> _fetchUserName() async {
+  // Helper function to safely fetch the name from a collection
+  Future<String?> _getNameFromCollection(String uid, String collection) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final uid = user.uid;
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection(collection)
+          .doc(uid)
+          .get();
 
-        // Check in donor collection
-        DocumentSnapshot donorDoc = await FirebaseFirestore.instance
-            .collection('donor')
-            .doc(uid)
-            .get();
-
-        if (donorDoc.exists) {
-          setState(() {
-            userName = donorDoc['name'];
-            isLoading = false;
-          });
-          return;
-        }
-
-        // Check in ngo collection
-        DocumentSnapshot ngoDoc = await FirebaseFirestore.instance
-            .collection('ngo')
-            .doc(uid)
-            .get();
-
-        if (ngoDoc.exists) {
-          setState(() {
-            userName = ngoDoc['name'];
-            isLoading = false;
-          });
-          return;
-        }
-
-        // Check in admin collection
-        DocumentSnapshot adminDoc = await FirebaseFirestore.instance
-            .collection('admin')
-            .doc(uid)
-            .get();
-
-        if (adminDoc.exists) {
-          setState(() {
-            userName = adminDoc['name'];
-            isLoading = false;
-          });
-          return;
-        }
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data() as Map<String, dynamic>;
+        // Assuming the name field is consistently named 'name'
+        return data['name'] as String?;
       }
     } catch (e) {
-      debugPrint("Error fetching user name: $e");
+      debugPrint("Error fetching name from $collection: $e");
+    }
+    return null;
+  }
+
+  Future<void> _fetchUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    String? fetchedName;
+
+    if (user != null) {
+      final uid = user.uid;
+
+      // 1. Check in NGOREG collection (Prioritized for this screen based on your DB image)
+      fetchedName = await _getNameFromCollection(uid, 'ngoreg');
+
+      // 2. Check other collections only if the name wasn't found in 'ngoreg'
+      if (fetchedName == null) {
+        fetchedName = await _getNameFromCollection(uid, 'donor');
+      }
+
+      if (fetchedName == null) {
+        fetchedName = await _getNameFromCollection(uid, 'admin');
+      }
+
     }
 
+    // Update state once, with the best name found or a fallback
     setState(() {
-      userName = "User"; // fallback
+      userName = fetchedName ?? "User";
       isLoading = false;
     });
+
+    if (userName == "User") {
+      debugPrint("Warning: User is null or UID not found in 'ngoreg', 'donor', or 'admin' collections, or the 'name' field is missing.");
+    }
   }
 
   @override
@@ -100,9 +93,10 @@ class _HomeScreenState extends State<NgoHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
+                  // Display the name directly
                   isLoading
                       ? "Loading..."
-                      : "Welcome back, $userName",
+                      : "Welcome back, ${userName!}",
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -180,6 +174,10 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
+        // onTap: () {
+        //   // Handle navigation here (e.g., Navigator.push for the respective screen)
+        //   debugPrint('$label tapped');
+        // },
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         decoration: BoxDecoration(
           color: Colors.white,

@@ -56,8 +56,8 @@ class _DashboardScreenState extends State<NgoDashboardScreen> {
 
     _pages = [
       const NgoHomeScreen(),
-      const NGOViewRequestScreen(),
-      RequestStatus(items: requestItems),
+       NGOViewRequestScreen(),
+      RequestStatus(),
       const FeedbackFormScreen(),
       const NgoProfileScreen(),
     ];

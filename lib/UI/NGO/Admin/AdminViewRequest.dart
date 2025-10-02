@@ -1,17 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:project/UI/NGO/ngorequest_status.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// NOTE: Ensure 'ngorequest_status.dart' exists and is correctly structured.
+// import 'package:project/UI/NGO/ngorequest_status.dart';
 
-// Shared in-memory request store
+// =========================================================================
+// MOCK/PLACEHOLDER CLASSES FOR DEPENDENCIES (Assumes they exist in your project)
+// =========================================================================
+class RequestItem {
+  final String name;
+  final String plates;
+  final String status;
+  final String dateTime;
+  final String donorName;
+  final String contact;
+  final String location;
+  RequestItem({required this.name, required this.plates, required this.status, required this.dateTime, required this.donorName, required this.contact, required this.location});
+}
+
+class RequestStatus extends StatelessWidget {
+  const RequestStatus({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(appBar: AppBar(title: const Text("Request Status")), body: const Center(child: Text("Navigated to Request Status.")));
+  }
+}
+
 class AdminRequestStore {
   AdminRequestStore._privateConstructor();
   static final AdminRequestStore instance = AdminRequestStore._privateConstructor();
 
-  final List<Map<String, String>> requests = [];
+  final List<Map<String, dynamic>> requests = [];
 
-  void addRequest(Map<String, String> request) {
+  void addRequest(Map<String, dynamic> request) {
     requests.add(request);
   }
 }
+// =========================================================================
 
 
 class AdminViewRequestsScreen extends StatefulWidget {
@@ -26,30 +50,61 @@ class AdminViewRequestsScreen extends StatefulWidget {
 
 
 class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
-  final List<Map<String, String>> requests = [
-    {
+  // Reference to the Firestore collection
+  final CollectionReference _ngoRequests =
+  FirebaseFirestore.instance.collection('requestsFromNgo');
+
+  // Helper to map Firestore Timestamp to the string format used in the original structure
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      final dateTime = timestamp.toDate();
+      // Format: Day-Month-Year Hour:Minute AM/PM
+      final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+      final ampm = dateTime.hour >= 12 ? 'PM' : 'AM';
+      return "${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year} ${hour}:${dateTime.minute.toString().padLeft(2, '0')} $ampm";
+    }
+    return 'N/A';
+  }
+
+  // CORE LOGIC: Safely maps the Firestore document data.
+  Map<String, String> _mapDocumentToRequest(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final quantityRequested = data['quantityRequested'] ?? 0;
+
+    return {
+      "id": doc.id, // 🔑 DOCUMENT ID is stored here
       "type": "NGO",
-      "name": "Helping Hands",
-      "foodName": "Rice & Curry",
-      "foodType": "Veg",
-      "required": "30 plates",
-      "location": "Chennai, TN",
-      "phone": "9876543210",
-      "dateTime": "01-09-2025 10:30 AM",
-      "status": "pending",
-    },
-    {
-      "type": "Individual",
-      "name": "John Doe",
-      "foodName": "Biryani",
-      "foodType": "Non Veg",
-      "required": "15 plates",
-      "location": "Coimbatore, TN",
-      "phone": "9123456780",
-      "dateTime": "01-09-2025 02:15 PM",
-      "status": "pending",
-    },
-  ];
+      "name": data['ngoName'] ?? 'Unknown NGO',
+      "foodName": data['foodName'] ?? 'N/A',
+      "foodType": data['foodType'] ?? 'N/A',
+      "required": "$quantityRequested plates",
+      "location": data['pickupAddress'] ?? 'N/A',
+      "phone": data['donorPhone'] ?? 'N/A',
+      "dateTime": _formatTimestamp(data['requestTime']),
+      "status": (data['status'] is String) ? data['status'].toLowerCase() : 'pending',
+    };
+  }
+
+  // CORE LOGIC: The function that updates Firestore.
+  Future<void> _updateRequestStatus(String docId, String newStatus) async {
+    try {
+      // ✅ This line updates the specific document in 'requestsFromNgo'
+      await _ngoRequests.doc(docId).update({
+        'status': newStatus.toLowerCase(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Request status updated to ${newStatus.toUpperCase()}!')),
+        );
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update status: ${e.message}'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,12 +113,31 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
         backgroundColor: Colors.green,
         title: const Text('Excess Food Sharing'),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: requests.length,
-        itemBuilder: (context, index) {
-          final request = requests[index];
-          return _buildRequestCard(request);
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _ngoRequests.snapshots(), // Stream ALL requests
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error fetching data: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("No NGO requests found."));
+          }
+
+          final requests = snapshot.data!.docs
+              .map(_mapDocumentToRequest)
+              .toList();
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final request = requests[index];
+              return _buildRequestCard(request);
+            },
+          );
         },
       ),
     );
@@ -101,7 +175,11 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
           const SizedBox(height: 16),
           _buildStatusRow(request['status']!),
           const SizedBox(height: 12),
-          if (request['status'] == 'pending') _buildActionButtons(request),
+
+          // Action buttons are called here and passed the document ID.
+          // The condition is removed, so buttons always show if an ID exists.
+          if (request.containsKey('id'))
+            _buildActionButtons(request['id']!),
         ],
       ),
     );
@@ -133,37 +211,23 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
     );
   }
 
-  Widget _buildActionButtons(Map<String, String> request) {
+  // The function that builds the Approve/Reject buttons
+  Widget _buildActionButtons(String docId) {
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              // Create multiple RequestItem if needed
-              List<RequestItem> requestItems = [
-                RequestItem(
-                  name: request['foodName']!,
-                  plates: request['required']!,
-                  status: 'Approved',
-                  dateTime: request['dateTime']!,
-                  donorName: request['name']!,
-                  contact: request['phone']!,
-                  location: request['location']!,
-                ),
-                // You can add more items here if multiple requests from same donor
-              ];
+              // 1. Call the function to update status to 'approved'
+              _updateRequestStatus(docId, 'approved');
 
-              // Navigate to RequestStatus with multiple items
+              // 2. Navigate (Keeps original navigation logic)
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => RequestStatus(items: requestItems),
+                  builder: (_) => const RequestStatus(), // Navigates to the NGO's status screen
                 ),
               );
-
-              setState(() {
-                request['status'] = 'approved';
-              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
@@ -177,9 +241,8 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              setState(() {
-                request['status'] = 'rejected';
-              });
+              // Call the function to update status to 'rejected'
+              _updateRequestStatus(docId, 'rejected');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

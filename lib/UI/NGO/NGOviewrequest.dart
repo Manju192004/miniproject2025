@@ -1,34 +1,177 @@
 import 'package:flutter/material.dart';
-import 'package:project/UI/NGO/Admin/AdminViewRequest.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// Note: Replace the import below with your actual file path if needed.
+// import 'package:project/UI/NGO/Admin/AdminViewRequest.dart';
 
-class NGOViewRequestScreen extends StatefulWidget {
-  const NGOViewRequestScreen({super.key});
-
-  @override
-  State<NGOViewRequestScreen> createState() => _NGOViewRequestScreenState();
+// =========================================================================
+// Placeholder for AdminRequestStore (Simulates local request tracking)
+// =========================================================================
+class AdminRequestStore {
+  AdminRequestStore._();
+  static final AdminRequestStore instance = AdminRequestStore._();
+  void addRequest(Map<String, dynamic> data) {
+    // In a real app, this would update a local state or provider.
+    // print("Request added to Admin Store: $data");
+  }
 }
 
-class _NGOViewRequestScreenState extends State<NGOViewRequestScreen> {
-  final String foodName = "Rice Biryani";
-  final int donorQuantity = 10;
-  final String foodType = "Non-Veg";
-  final String bestBefore = "Today 8:00 PM";
-  final String pickupAddress = "123 Main Street";
-  final String deliveryMethod = "NGO will collect";
-  final String donorPhone = "9876543210";
+// =========================================================================
+// 1. Donation Model (Data structure and Firestore parsing)
+// =========================================================================
+class Donation {
+  final String id;
+  final String foodName;
+  final int quantity;
+  final String foodType;
+  final String bestBefore;
+  final String pickupAddress;
+  final String deliveryMethod;
+  final String donorPhone;
 
+  Donation({
+    required this.id,
+    required this.foodName,
+    required this.quantity,
+    required this.foodType,
+    required this.bestBefore,
+    required this.pickupAddress,
+    required this.deliveryMethod,
+    required this.donorPhone,
+  });
+
+  static String _safeTimestampToString(dynamic data) {
+    if (data is Timestamp) {
+      final dateTime = data.toDate();
+      return "${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}";
+    } else if (data is String) {
+      return data;
+    }
+    return 'N/A';
+  }
+
+  factory Donation.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+
+    return Donation(
+      id: doc.id,
+      foodName: data['foodName'] ?? 'N/A',
+      // Safely parse quantity which might be stored as String or int
+      quantity: data['quantity'] is String
+          ? int.tryParse(data['quantity']) ?? 0
+          : data['quantity'] ?? (data['quantity'] is int ? data['quantity'] : 0),
+      foodType: data['foodType'] ?? 'N/A',
+      bestBefore: _safeTimestampToString(data['bestBefore']),
+      pickupAddress: data['pickupAddress'] ?? 'N/A',
+      deliveryMethod: data['deliveryMethod'] ?? 'N/A',
+      donorPhone: data['donorPhone'] ?? 'N/A',
+    );
+  }
+}
+
+// =========================================================================
+// 2. NGO View Requests List Screen (The main list container)
+// =========================================================================
+
+class NGOViewRequestScreen extends StatelessWidget {
+   NGOViewRequestScreen({super.key});
+
+  final CollectionReference _donations =
+  FirebaseFirestore.instance.collection('adddonation');
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Available Donations"),
+        backgroundColor: Colors.green,
+      ),
+      // Uses StreamBuilder to get ALL documents in real-time
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _donations.snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error fetching data: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("No available donations found."));
+          }
+
+          final donationsList = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: donationsList.length,
+            itemBuilder: (context, index) {
+              final document = donationsList[index];
+              final donation = Donation.fromFirestore(document);
+
+              // Renders each document using the detailed card style
+              return DonationDetailCard(
+                donation: donation,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// =========================================================================
+// 3. Donation Detail Card (Stateful widget for the styled, interactive card)
+// =========================================================================
+
+class DonationDetailCard extends StatefulWidget {
+  final Donation donation;
+
+  const DonationDetailCard({
+    super.key,
+    required this.donation,
+  });
+
+  @override
+  State<DonationDetailCard> createState() => _DonationDetailCardState();
+}
+
+class _DonationDetailCardState extends State<DonationDetailCard> {
   final TextEditingController quantityController = TextEditingController();
 
-  void _sendRequest() {
+  // --- Placeholder NGO Details (MOCK DATA - Replace with actual Auth/User data) ---
+  final String currentNgoId = "ngo_user_123";
+  final String ngoName = "Helping Hand Foundation";
+  // ---------------------------------------------------------------------------------
+
+  // Reference to the new collection for NGO requests
+  final CollectionReference _ngoRequests =
+  FirebaseFirestore.instance.collection('requestsFromNgo');
+
+  // Reference to the original donation collection (retained for data structure)
+  final CollectionReference _donations =
+  FirebaseFirestore.instance.collection('adddonation');
+
+
+  @override
+  void dispose() {
+    quantityController.dispose();
+    super.dispose();
+  }
+
+  // =================================================
+  // FUNCTION TO HANDLE 'SEND REQUEST' (Write to requestsFromNgo)
+  // =================================================
+  void _sendRequest() async {
     final entered = int.tryParse(quantityController.text.trim()) ?? 0;
 
-    if (entered <= 0 || entered > donorQuantity) {
+    if (entered <= 0 || entered > widget.donation.quantity) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Invalid Quantity"),
           content: Text(
-              "Donor has only $donorQuantity plates.\nPlease enter a number between 1 and $donorQuantity."),
+              "Donor has only ${widget.donation.quantity} plates.\nPlease enter a number between 1 and ${widget.donation.quantity}."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -40,36 +183,62 @@ class _NGOViewRequestScreenState extends State<NGOViewRequestScreen> {
       return;
     }
 
-    // Add request to singleton (background)
-    AdminRequestStore.instance.addRequest({
-      "type": "NGO",
-      "name": "NGO Name",
-      "foodName": foodName,
-      "foodType": foodType,
-      "required": "$entered plates",
-      "location": pickupAddress,
-      "phone": donorPhone,
-      "dateTime": DateTime.now().toString(),
-      "status": "pending",
-    });
+    Map<String, dynamic> requestData = {
+      // NGO Details
+      "ngoId": currentNgoId,
+      "ngoName": ngoName,
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Request sent for $entered plates of $foodName."),
-        backgroundColor: Colors.green,
-      ),
-    );
+      // Donation Details
+      "originalDonationId": widget.donation.id,
+      "donorPhone": widget.donation.donorPhone,
+      "foodName": widget.donation.foodName,
+      "foodType": widget.donation.foodType,
+      "pickupAddress": widget.donation.pickupAddress,
+      "deliveryMethod": widget.donation.deliveryMethod,
 
-    // Clear input field
-    quantityController.clear();
+      // Request Details
+      "quantityRequested": entered,
+      "quantityAvailable": widget.donation.quantity,
+      "requestTime": FieldValue.serverTimestamp(),
+      "status": "Pending",
+    };
+
+    try {
+      await _ngoRequests.add(requestData);
+      AdminRequestStore.instance.addRequest(requestData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Request sent for $entered plates of ${widget.donation.foodName}. Awaiting admin approval."),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      quantityController.clear();
+
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to send request: ${e.message}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
+
+  // =================================================
+  // FUNCTION TO HANDLE 'REJECT REQUEST' - PLACEHOLDER ACTION
+  // =================================================
   void _rejectRequest() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Reject Request"),
-        content: const Text("Are you sure you want to reject this donation?"),
+        title: const Text("Reject Donation"),
+        content: const Text("Are you sure you want to mark this donation as rejected?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -78,53 +247,80 @@ class _NGOViewRequestScreenState extends State<NGOViewRequestScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Donation request rejected."),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              Navigator.of(context).pop(); // Close the dialog
+
+              // --- PLACEHOLDER ACTION: NO DATABASE OPERATION ---
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Donation rejected (no database changes made)."),
+                    backgroundColor: Colors.grey,
+                  ),
+                );
+              }
+              // --- END PLACEHOLDER ACTION ---
             },
-            child: const Text("Reject"),
+            child: const Text("Reject (Local)"),
           ),
         ],
       ),
     );
   }
 
+  // Exact styling function from your preferred detailed view
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(value, style: const TextStyle(fontSize: 16)),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("View Donation Request"),
-        backgroundColor: Colors.green,
-      ),
-      body: SingleChildScrollView(
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 16.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoRow("Food Name", foodName),
+            _buildInfoRow("Food Name", widget.donation.foodName),
             const SizedBox(height: 12),
             TextField(
               controller: quantityController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: "Quantity (Max: $donorQuantity)",
+                labelText: "Quantity (Max: ${widget.donation.quantity})",
                 border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
-            _buildInfoRow("Food Type", foodType),
+            _buildInfoRow("Food Type", widget.donation.foodType),
             const SizedBox(height: 12),
-            _buildInfoRow("Best Before", bestBefore),
+            _buildInfoRow("Best Before", widget.donation.bestBefore),
             const SizedBox(height: 12),
-            _buildInfoRow("Pickup Address", pickupAddress),
+            _buildInfoRow("Pickup Address", widget.donation.pickupAddress),
             const SizedBox(height: 12),
-            _buildInfoRow("Delivery Method", deliveryMethod),
+            _buildInfoRow("Delivery Method", widget.donation.deliveryMethod),
             const SizedBox(height: 12),
-            _buildInfoRow("Donor Phone", donorPhone),
+            _buildInfoRow("Donor Phone", widget.donation.donorPhone),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -161,28 +357,6 @@ class _NGOViewRequestScreenState extends State<NGOViewRequestScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(value, style: const TextStyle(fontSize: 16)),
-        ),
-      ],
     );
   }
 }
