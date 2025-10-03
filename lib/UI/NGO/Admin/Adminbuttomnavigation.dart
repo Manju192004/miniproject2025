@@ -4,6 +4,7 @@ import 'package:project/UI/Home_screen/home_screen.dart';
 import 'package:project/UI/NGO/Admin/AdminHomepage.dart' show  AdminHomeScreen;
 import 'package:project/UI/NGO/Admin/AdminRedonation.dart' show RedonationScreen;
 import 'package:project/UI/NGO/Admin/AdminViewRequest.dart' show AdminViewRequestsScreen;
+import 'package:project/UI/NGO/Admin/Adminreports.dart';
 import 'package:project/UI/NGO/Admin/ViewDonorProfile.dart' show DonorProfileScreen;
 import 'package:project/UI/NGO/Admin/ViewNGOprofile.dart' show NGOProfileScreen;
 
@@ -29,6 +30,7 @@ class _DashboardScreenState extends State<AdminDashboardScreen> {
     DonorProfileScreen(),
     FeedbackScreen(),
     NGOProfileScreen(),
+    ReportsScreen(),
   ];
 
   @override
@@ -93,6 +95,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
           _buildNavItem(Icons.person, 'Donorprofile', 2),
           _buildNavItem(Icons.chat, 'feedback', 3),
           _buildNavItem(Icons.person, 'NGOProfile', 4),
+          _buildNavItem(Icons.person, 'Reports', 5),
         ],
       ),
     );

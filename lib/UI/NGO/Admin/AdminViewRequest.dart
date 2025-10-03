@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// NOTE: Ensure 'ngorequest_status.dart' exists and is correctly structured.
-// import 'package:project/UI/NGO/ngorequest_status.dart';
 
 // =========================================================================
-// MOCK/PLACEHOLDER CLASSES FOR DEPENDENCIES (Assumes they exist in your project)
+// MOCK/PLACEHOLDER CLASSES FOR DEPENDENCIES
 // =========================================================================
 class RequestItem {
   final String name;
@@ -21,7 +19,8 @@ class RequestStatus extends StatelessWidget {
   const RequestStatus({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: const Text("Request Status")), body: const Center(child: Text("Navigated to Request Status.")));
+    // This is the placeholder screen the admin navigates to after approval.
+    return Scaffold(appBar: AppBar(title: const Text("Request Status")), body: const Center(child: Text("Navigated to Request Status (NGO's perspective).")));
   }
 }
 
@@ -50,9 +49,13 @@ class AdminViewRequestsScreen extends StatefulWidget {
 
 
 class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
-  // Reference to the Firestore collection
+  // Reference to the requests collection
   final CollectionReference _ngoRequests =
   FirebaseFirestore.instance.collection('requestsFromNgo');
+
+  // Reference to the original donations collection
+  final CollectionReference _addDonationCollection =
+  FirebaseFirestore.instance.collection('adddonation');
 
   // Helper to map Firestore Timestamp to the string format used in the original structure
   String _formatTimestamp(dynamic timestamp) {
@@ -72,8 +75,10 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
     final quantityRequested = data['quantityRequested'] ?? 0;
 
     return {
-      "id": doc.id, // 🔑 DOCUMENT ID is stored here
+      "id": doc.id, // Request Document ID
       "type": "NGO",
+      // ADDED: The ID of the original donation document
+      "originalDonationId": data['originalDonationId'] ?? '',
       "name": data['ngoName'] ?? 'Unknown NGO',
       "foodName": data['foodName'] ?? 'N/A',
       "foodType": data['foodType'] ?? 'N/A',
@@ -85,13 +90,32 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
     };
   }
 
-  // CORE LOGIC: The function that updates Firestore.
-  Future<void> _updateRequestStatus(String docId, String newStatus) async {
+  // CORE LOGIC: The function that updates Firestore. Now handles two updates.
+  Future<void> _updateRequestStatus(
+      String requestDocId,
+      String newStatus,
+      String originalDonationId,
+      String ngoName, // 💡 FIX: Passed NGO Name is used here
+      ) async {
     try {
-      // ✅ This line updates the specific document in 'requestsFromNgo'
-      await _ngoRequests.doc(docId).update({
-        'status': newStatus.toLowerCase(),
+      String statusLower = newStatus.toLowerCase();
+
+      // 1. Update the status in the 'requestsFromNgo' collection
+      await _ngoRequests.doc(requestDocId).update({
+        'status': statusLower,
       });
+
+      // 2. CONDITIONAL SECOND UPDATE: Update the original 'adddonation' document
+      if (statusLower == 'approved' && originalDonationId.isNotEmpty) {
+
+        // FIX: Use the passed ngoName directly for a reliable and faster update.
+        await _addDonationCollection.doc(originalDonationId).update({
+          'status': 'Approved',
+          // Use the passed NGO's name for display on the donor side
+          'acceptedByNgoName': ngoName,
+        });
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Request status updated to ${newStatus.toUpperCase()}!')),
@@ -176,10 +200,9 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
           _buildStatusRow(request['status']!),
           const SizedBox(height: 12),
 
-          // Action buttons are called here and passed the document ID.
-          // The condition is removed, so buttons always show if an ID exists.
+          // Action buttons now take the full request map
           if (request.containsKey('id'))
-            _buildActionButtons(request['id']!),
+            _buildActionButtons(request),
         ],
       ),
     );
@@ -191,6 +214,7 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(" ", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
           Text("$title: ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
           Expanded(child: Text(value, style: const TextStyle(color: Colors.black54, fontSize: 15))),
         ],
@@ -212,22 +236,26 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
   }
 
   // The function that builds the Approve/Reject buttons
-  Widget _buildActionButtons(String docId) {
+  Widget _buildActionButtons(Map<String, String> request) {
+    final String requestDocId = request['id']!;
+    final String originalDonationId = request['originalDonationId']!; // Retrieve the original donation ID
+    final String ngoName = request['name']!; // Retrieve the NGO Name
+
     return Row(
       children: [
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              // 1. Call the function to update status to 'approved'
-              _updateRequestStatus(docId, 'approved');
+              // 1. Call the function to update status to 'approved' in BOTH collections
+              _updateRequestStatus(requestDocId, 'approved', originalDonationId, ngoName);
 
-              // 2. Navigate (Keeps original navigation logic)
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const RequestStatus(), // Navigates to the NGO's status screen
-                ),
-              );
+              // 2. Navigation (You can uncomment this if you want to navigate after approval)
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (_) => const RequestStatus(),
+              //   ),
+              // );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
@@ -241,8 +269,8 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
         Expanded(
           child: ElevatedButton(
             onPressed: () {
-              // Call the function to update status to 'rejected'
-              _updateRequestStatus(docId, 'rejected');
+              // Call the function to update status to 'rejected' in the requestsFromNgo collection only
+              _updateRequestStatus(requestDocId, 'rejected', originalDonationId, ngoName);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

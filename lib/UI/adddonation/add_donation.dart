@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -16,6 +15,11 @@ class AddDonationForm extends StatefulWidget {
 
 class _AddDonationFormState extends State<AddDonationForm> {
   final _formKey = GlobalKey<FormState>();
+
+  // --- Mock Donor Details (REPLACE WITH REAL FIREBASE AUTH DATA) ---
+  final String _currentDonorId = "donor_uid_12345"; // e.g., FirebaseAuth.instance.currentUser!.uid
+  final String _currentDonorName = "John Doe";      // e.g., FirebaseAuth.instance.currentUser!.displayName ?? "Donor"
+  // -----------------------------------------------------------------
 
   final TextEditingController _foodNameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
@@ -92,6 +96,12 @@ class _AddDonationFormState extends State<AddDonationForm> {
 
       try {
         await FirebaseFirestore.instance.collection('adddonation').add({
+          // --- Donor Details Stored Here ---
+          'donorId': _currentDonorId,
+          'donorName': _currentDonorName,
+          // --- NEW STATUS FIELD ADDED ---
+          'status': 'Pending', // Initial status is set to Pending
+          // ----------------------------------
           'foodName': _foodNameController.text.trim(),
           'quantity': _quantityController.text.trim(),
           'foodType': _foodType,
@@ -154,22 +164,22 @@ class _AddDonationFormState extends State<AddDonationForm> {
         ? 'Select Date & Time'
         : DateFormat('dd/MM/yyyy hh:mm a').format(_bestBefore!);
     return MaterialApp(
-        debugShowCheckedModeBanner: false,  // 👈 add this line
-        theme: ThemeData(
-          inputDecorationTheme: const InputDecorationTheme(
-            labelStyle: TextStyle(color: Colors.grey),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.green, width: 2),
-            ),
-            floatingLabelStyle: TextStyle(color: Colors.green),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        inputDecorationTheme: const InputDecorationTheme(
+          labelStyle: TextStyle(color: Colors.grey),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey),
           ),
-          textTheme: const TextTheme(
-            bodyMedium: TextStyle(color: Colors.green),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.green, width: 2),
           ),
+          floatingLabelStyle: TextStyle(color: Colors.green),
         ),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.green),
+        ),
+      ),
       home: Scaffold(
         appBar: AppBar(
           title: const Text(
@@ -237,7 +247,6 @@ class _AddDonationFormState extends State<AddDonationForm> {
                       formattedDateTime,
                       style: TextStyle(
                         color: _bestBefore == null
-
                             ? Colors.black54
                             : Colors.green,
                         fontWeight: FontWeight.w600,

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Note: Replace the import below with your actual file path if needed.
-// import 'package:project/UI/NGO/Admin/AdminViewRequest.dart';
 
 // =========================================================================
-// Placeholder for AdminRequestStore (Simulates local request tracking)
+// 0. Placeholder for AdminRequestStore (Simulates local request tracking)
 // =========================================================================
 class AdminRequestStore {
   AdminRequestStore._();
@@ -42,6 +40,7 @@ class Donation {
   static String _safeTimestampToString(dynamic data) {
     if (data is Timestamp) {
       final dateTime = data.toDate();
+      // Format: MM/DD/YYYY HH:MM
       return "${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}";
     } else if (data is String) {
       return data;
@@ -49,21 +48,39 @@ class Donation {
     return 'N/A';
   }
 
+  // --- FIX APPLIED HERE: Extract numeric part from quantity string ---
+  static int _extractQuantity(dynamic value) {
+    if (value is int) {
+      return value;
+    } else if (value is String) {
+      // Regex to find the first sequence of one or more digits
+      final RegExp digitRegex = RegExp(r'\d+');
+      final match = digitRegex.firstMatch(value);
+      if (match != null) {
+        // Extract the matched number (e.g., "10" from "10plates") and parse it
+        return int.tryParse(match.group(0)!) ?? 0;
+      }
+    }
+    return 0;
+  }
+  // -----------------------------------------------------------------
+
   factory Donation.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
 
     return Donation(
       id: doc.id,
       foodName: data['foodName'] ?? 'N/A',
-      // Safely parse quantity which might be stored as String or int
-      quantity: data['quantity'] is String
-          ? int.tryParse(data['quantity']) ?? 0
-          : data['quantity'] ?? (data['quantity'] is int ? data['quantity'] : 0),
+      // Use the corrected method to safely parse the quantity
+      quantity: _extractQuantity(data['quantity']),
       foodType: data['foodType'] ?? 'N/A',
+      // The Firestore image shows 'bestBefore' is a Timestamp in the left pane,
+      // but the data structure shows it as a String. We use the safe method.
       bestBefore: _safeTimestampToString(data['bestBefore']),
       pickupAddress: data['pickupAddress'] ?? 'N/A',
       deliveryMethod: data['deliveryMethod'] ?? 'N/A',
-      donorPhone: data['donorPhone'] ?? 'N/A',
+      // Check for 'phoneNumber' (as seen in the image) or 'donorPhone'
+      donorPhone: data['phoneNumber'] ?? data['donorPhone'] ?? 'N/A',
     );
   }
 }
@@ -73,8 +90,9 @@ class Donation {
 // =========================================================================
 
 class NGOViewRequestScreen extends StatelessWidget {
-   NGOViewRequestScreen({super.key});
+  NGOViewRequestScreen({super.key});
 
+  // Reference the 'adddonation' collection
   final CollectionReference _donations =
   FirebaseFirestore.instance.collection('adddonation');
 
@@ -87,6 +105,7 @@ class NGOViewRequestScreen extends StatelessWidget {
       ),
       // Uses StreamBuilder to get ALL documents in real-time
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        // Explicitly cast the stream type
         stream: _donations.snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -148,11 +167,6 @@ class _DonationDetailCardState extends State<DonationDetailCard> {
   final CollectionReference _ngoRequests =
   FirebaseFirestore.instance.collection('requestsFromNgo');
 
-  // Reference to the original donation collection (retained for data structure)
-  final CollectionReference _donations =
-  FirebaseFirestore.instance.collection('adddonation');
-
-
   @override
   void dispose() {
     quantityController.dispose();
@@ -163,6 +177,25 @@ class _DonationDetailCardState extends State<DonationDetailCard> {
   // FUNCTION TO HANDLE 'SEND REQUEST' (Write to requestsFromNgo)
   // =================================================
   void _sendRequest() async {
+    // Check if the donation quantity is zero or less
+    if (widget.donation.quantity <= 0) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Donation Unavailable"),
+          content: const Text(
+              "This donation is currently unavailable (Quantity is 0)."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final entered = int.tryParse(quantityController.text.trim()) ?? 0;
 
     if (entered <= 0 || entered > widget.donation.quantity) {
@@ -204,6 +237,7 @@ class _DonationDetailCardState extends State<DonationDetailCard> {
     };
 
     try {
+      // Add the request to the 'requestsFromNgo' collection
       await _ngoRequests.add(requestData);
       AdminRequestStore.instance.addRequest(requestData);
 
@@ -306,6 +340,7 @@ class _DonationDetailCardState extends State<DonationDetailCard> {
             TextField(
               controller: quantityController,
               keyboardType: TextInputType.number,
+              // Displays the dynamically parsed and corrected quantity
               decoration: InputDecoration(
                 labelText: "Quantity (Max: ${widget.donation.quantity})",
                 border: const OutlineInputBorder(),
@@ -331,7 +366,7 @@ class _DonationDetailCardState extends State<DonationDetailCard> {
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: _sendRequest,
+                    onPressed: widget.donation.quantity > 0 ? _sendRequest : null, // Disable if quantity is 0
                     child: const Text(
                       "Send Request",
                       style: TextStyle(fontSize: 16),

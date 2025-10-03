@@ -24,35 +24,6 @@ class _DashboardScreenState extends State<NgoDashboardScreen> {
     super.initState();
 
     // Prepare multiple requests for RequestStatus
-    final List<RequestItem> requestItems = [
-      RequestItem(
-        name: 'Rice Biryani',
-        plates: '10 plates',
-        status: 'Pending',
-        dateTime: '02-10-2025 10:00 AM',
-        donorName: 'Donor Name',
-        contact: '9876543210',
-        location: 'Chennai, TN',
-      ),
-      RequestItem(
-        name: 'Dosa',
-        plates: '15 plates',
-        status: 'Approved',
-        dateTime: '01-10-2025 08:30 AM',
-        donorName: 'Another Donor',
-        contact: '9123456780',
-        location: 'Coimbatore, TN',
-      ),
-      RequestItem(
-        name: 'Idly',
-        plates: '12 plates',
-        status: 'Rejected',
-        dateTime: '30-09-2025 09:15 AM',
-        donorName: 'Third Donor',
-        contact: '9012345678',
-        location: 'Madurai, TN',
-      ),
-    ];
 
     _pages = [
       const NgoHomeScreen(),
@@ -73,6 +44,7 @@ class _DashboardScreenState extends State<NgoDashboardScreen> {
         }
         return true;
       },
+
       child: Scaffold(
         body: IndexedStack(
           index: _currentIndex,

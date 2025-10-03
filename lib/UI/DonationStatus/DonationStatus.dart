@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// Note: Uncomment this in your real app once you have the dependency
+// import 'package:firebase_auth/firebase_auth.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -12,8 +15,11 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Donation model
+// =========================================================================
+// 1. Donation Model (Updated to include document ID)
+// =========================================================================
 class Donation {
+  final String id; // 💡 Document ID
   final String foodName;
   final int quantity;
   final String status; // Pending, Accepted, Completed, Expired
@@ -21,14 +27,59 @@ class Donation {
   final String? acceptedByNgo; // NGO name (nullable)
 
   Donation({
+    required this.id, // 💡 Required ID
     required this.foodName,
     required this.quantity,
     required this.status,
     required this.date,
     this.acceptedByNgo,
   });
+
+  // Factory method to parse data from the 'adddonation' collection
+  factory Donation.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+
+    // Safely parse quantity which is stored as String (e.g., "10plates")
+    int _extractQuantity(dynamic value) {
+      if (value is int) return value;
+      if (value is String) {
+        final RegExp digitRegex = RegExp(r'\d+');
+        final match = digitRegex.firstMatch(value);
+        // Extracts the number part and attempts to parse it
+        return int.tryParse(match?.group(0) ?? '') ?? 0;
+      }
+      return 0;
+    }
+
+    // Safely parse timestamp
+    DateTime _parseTimestamp(dynamic timestamp) {
+      if (timestamp is Timestamp) {
+        return timestamp.toDate();
+      }
+      // Use FieldValue.serverTimestamp() or document creation time as fallback
+      if (doc.metadata.hasPendingWrites) {
+        return DateTime.now();
+      }
+      // Use a default/earliest time if timestamp is missing
+      return DateTime(2000);
+    }
+
+    return Donation(
+      id: doc.id, // 💡 Capture the document ID
+      foodName: data['foodName'] ?? 'N/A',
+      quantity: _extractQuantity(data['quantity']),
+      status: data['status'] ?? 'Pending',
+      // We use 'timestamp' field from adddonation for the donation date
+      date: _parseTimestamp(data['timestamp']),
+      // Assuming 'acceptedByNgoName' might be set when an admin approves/accepts
+      acceptedByNgo: data['acceptedByNgoName'],
+    );
+  }
 }
 
+// =========================================================================
+// 2. DonorDonationStatusScreen (Uses StreamBuilder with client-side sorting)
+// =========================================================================
 class DonorDonationStatusScreen extends StatefulWidget {
   const DonorDonationStatusScreen({super.key});
 
@@ -39,42 +90,27 @@ class DonorDonationStatusScreen extends StatefulWidget {
 
 class _DonorDonationStatusScreenState
     extends State<DonorDonationStatusScreen> {
-  // Example dummy data (replace with Firebase/DB data later)
-  final List<Donation> donations = [
-    Donation(
-        foodName: "Biriyani",
-        quantity: 20,
-        status: "Pending",
-        date: DateTime.now().subtract(const Duration(hours: 3))),
-    Donation(
-        foodName: "Veg Meals",
-        quantity: 15,
-        status: "Accepted",
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        acceptedByNgo: "Helping Hands NGO"),
-    Donation(
-        foodName: "Pizza Boxes",
-        quantity: 10,
-        status: "Completed",
-        date: DateTime.now().subtract(const Duration(days: 3)),
-        acceptedByNgo: "Food Relief Trust"),
-    Donation(
-        foodName: "Sandwich",
-        quantity: 8,
-        status: "Expired",
-        date: DateTime.now().subtract(const Duration(days: 5))),
-  ];
+
+  // 🛑 IMPORTANT: Replace this mock ID with the actual authenticated donor's UID.
+  final String _currentDonorId = "donor_uid_12345";
+  // final String _currentDonorId = FirebaseAuth.instance.currentUser!.uid;
+
+  // Reference to the 'adddonation' collection
+  final CollectionReference<Map<String, dynamic>> _donationsCollection =
+  FirebaseFirestore.instance.collection('adddonation');
 
   /// 🔹 Color for each status
   Color _statusColor(String status) {
-    switch (status) {
-      case "Pending":
+    switch (status.toLowerCase()) {
+      case "pending":
         return Colors.orange;
-      case "Accepted":
+      case "approved":
+      case "accepted":
         return Colors.blue;
-      case "Completed":
+      case "completed":
         return Colors.green;
-      case "Expired":
+      case "rejected":
+      case "expired":
         return Colors.red;
       default:
         return Colors.grey;
@@ -83,19 +119,50 @@ class _DonorDonationStatusScreenState
 
   /// 🔹 Icon for each status
   IconData _statusIcon(String status) {
-    switch (status) {
-      case "Pending":
+    switch (status.toLowerCase()) {
+      case "pending":
         return Icons.hourglass_empty;
-      case "Accepted":
+      case "approved":
+      case "accepted":
         return Icons.check_circle_outline;
-      case "Completed":
+      case "completed":
         return Icons.done_all;
-      case "Expired":
+      case "rejected":
+      case "expired":
         return Icons.cancel;
       default:
         return Icons.info;
     }
   }
+
+  // 💡 NEW: Function to update donation status to 'Completed'
+  Future<void> _markAsCompleted(String donationId) async {
+    try {
+      await _donationsCollection.doc(donationId).update({
+        'status': 'Completed',
+        'completionTime': FieldValue.serverTimestamp(), // Optional: record time
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Donation marked as Completed!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to mark as complete: ${e.message}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -104,66 +171,129 @@ class _DonorDonationStatusScreenState
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          "Excess Food",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          "My Donation Status",
+          style: TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: donations.length,
-        itemBuilder: (context, index) {
-          final donation = donations[index];
-          return Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: _statusColor(donation.status).withOpacity(0.2),
-                child: Icon(
-                  _statusIcon(donation.status),
-                  color: _statusColor(donation.status),
-                ),
-              ),
-              title: Text(
-                donation.foodName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Qty: ${donation.quantity} plates\nDate: ${donation.date.toLocal().toString().split('.')[0]}",
-                    style: const TextStyle(fontSize: 13),
+      // Use StreamBuilder to fetch real-time data from Firestore
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        // QUERY: Filter only by donorId to avoid Composite Index error
+        stream: _donationsCollection
+            .where('donorId', isEqualTo: _currentDonorId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("You haven't made any donations yet."));
+          }
+
+          // 1. Map the Firestore documents to the Donation model
+          final donationsList = snapshot.data!.docs
+              .map((doc) => Donation.fromFirestore(doc))
+              .toList();
+
+          // 2. SORTING: Manually sort the list by date descending (newest first)
+          donationsList.sort((a, b) => b.date.compareTo(a.date));
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: donationsList.length,
+            itemBuilder: (context, index) {
+              final donation = donationsList[index];
+              final statusLower = donation.status.toLowerCase();
+
+              // Determine if the "Mark as Donated" button should appear
+              final bool showCompleteButton =
+                  statusLower == 'pending' ||
+                      statusLower == 'approved' ||
+                      statusLower == 'accepted';
+
+              return Card(
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: _statusColor(donation.status).withOpacity(0.2),
+                    child: Icon(
+                      _statusIcon(donation.status),
+                      color: _statusColor(donation.status),
+                    ),
                   ),
-                  if (donation.acceptedByNgo != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      "Accepted by: ${donation.acceptedByNgo}",
-                      style: const TextStyle(
-                        fontSize: 13,
+                  title: Text(
+                    donation.foodName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Qty: ${donation.quantity} plates",
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      // Display date, formatted to show only the essential parts
+                      Text(
+                        "Date: ${donation.date.toLocal().toString().substring(0, 16)}",
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      // Display accepted NGO only if status is Accepted or Completed
+                      if (donation.acceptedByNgo != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          "Accepted by: ${donation.acceptedByNgo}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _statusColor(donation.status),
+                          ),
+                        ),
+                      ],
+
+                      // 💡 Mark as Donated Button Logic
+                      if (showCompleteButton)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: SizedBox(
+                            height: 30,
+                            child: ElevatedButton.icon(
+                              // Pass the donation's document ID to the update function
+                              onPressed: () => _markAsCompleted(donation.id),
+                              icon: const Icon(Icons.check, size: 16),
+                              label: const Text("Mark as Donated", style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.lightGreen,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _statusColor(donation.status).withOpacity(0.1),
+                      border: Border.all(color: _statusColor(donation.status)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      donation.status,
+                      style: TextStyle(
+                        color: _statusColor(donation.status),
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue,
                       ),
                     ),
-                  ],
-                ],
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _statusColor(donation.status).withOpacity(0.1),
-                  border: Border.all(color: _statusColor(donation.status)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  donation.status,
-                  style: TextStyle(
-                    color: _statusColor(donation.status),
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
