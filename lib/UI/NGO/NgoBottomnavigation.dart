@@ -91,7 +91,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
-          _buildNavItem(Icons.remove_red_eye_sharp, 'View Requests', 1),
+          _buildNavItem(Icons.remove_red_eye_sharp, 'View donations', 1),
           _buildNavItem(Icons.list_alt, 'Request Status', 2),
           _buildNavItem(Icons.feedback, 'Feedback', 3),
           _buildNavItem(Icons.person, 'Profile', 4),

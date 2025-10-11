@@ -38,6 +38,7 @@ class App extends StatelessWidget {
   }
 }
 
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -54,10 +55,17 @@ class _MyAppState extends State<MyApp> {
           debugShowCheckedModeBanner: false,
           title: 'Mini Project',
           theme: ThemeData(
-            primaryColor: appPrimaryColor,
-            unselectedWidgetColor: appPrimaryColor,
+            primaryColor: Colors.green,
+            unselectedWidgetColor: Colors.green,
             fontFamily: "Poppins",
+            textSelectionTheme: const TextSelectionThemeData(
+              cursorColor: Colors.green, // 👈 Blinking cursor color
+              selectionColor: Colors.green, // optional: text selection color
+              selectionHandleColor: Colors.green, // optional: handle color
+            ),
           ),
+
+
           darkTheme: ThemeData.dark(),
           themeMode: theme.brightness == Brightness.dark
               ? ThemeMode.dark

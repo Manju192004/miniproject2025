@@ -226,14 +226,6 @@ class NgoProfileScreen extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "Committed to zero waste.",
-                        style: TextStyle( // Changed tagline for NGO
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
                     ],
                   ),
                 ),

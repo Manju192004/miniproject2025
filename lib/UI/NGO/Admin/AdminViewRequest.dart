@@ -135,7 +135,7 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
-        title: const Text('Excess Food Sharing'),
+        title: const Text('NGO Requests'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _ngoRequests.snapshots(), // Stream ALL requests

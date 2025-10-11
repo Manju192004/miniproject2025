@@ -100,7 +100,7 @@ class NGOViewRequestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Available Donations"),
+        title: const Text("NGODonationRequest"),
         backgroundColor: Colors.green,
       ),
       // Uses StreamBuilder to get ALL documents in real-time

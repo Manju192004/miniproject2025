@@ -20,6 +20,9 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () {
               Navigator.of(ctx).pop(); // Close dialog
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green, // ✅ sets text & icon color
+            ),
             child: const Text("Cancel"),
           ),
           TextButton(
@@ -38,7 +41,7 @@ class ProfileScreen extends StatelessWidget {
             },
             child: const Text(
               "Yes",
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: Colors.green),
             ),
           ),
         ],
@@ -157,7 +160,41 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Container(
+          width: double.infinity,
+          color: Colors.green[700], // your chosen color
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Excess Food Sharing",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "Profile",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+
+
+      /*appBar: AppBar(
         title: const Text(
           "Excess Food Sharing",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -165,9 +202,10 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         elevation: 0,
         toolbarHeight: 80,
-        centerTitle: false,
+        centerTitle: true,
         // ❌ REMOVED: The original logout IconButton from actions
-      ),
+      ),*/
+
       body: user == null
           ? const Center(child: Text("No user logged in"))
           : FutureBuilder<DocumentSnapshot>(

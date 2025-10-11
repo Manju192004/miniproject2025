@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:project/UI/Feedback/feedback.dart';
 import 'package:project/UI/Home_screen/home_screen.dart';
 import 'package:project/UI/NGO/Admin/AdminHomepage.dart' show  AdminHomeScreen;
-import 'package:project/UI/NGO/Admin/AdminRedonation.dart' show RedonationScreen;
 import 'package:project/UI/NGO/Admin/AdminViewRequest.dart' show AdminViewRequestsScreen;
 import 'package:project/UI/NGO/Admin/Adminreports.dart';
 import 'package:project/UI/NGO/Admin/ViewDonorProfile.dart' show DonorProfileScreen;
@@ -26,7 +25,6 @@ class _DashboardScreenState extends State<AdminDashboardScreen> {
   final List<Widget> _pages = [
     AdminHomeScreen(),
     AdminViewRequestsScreen(),
-    // RedonationScreen(),
     DonorProfileScreen(),
     FeedbackScreen(),
     NGOProfileScreen(),
@@ -90,12 +88,11 @@ class CustomBottomNavigationBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
-          _buildNavItem(Icons.remove_red_eye, 'View Request', 1),
-          // _buildNavItem(Icons.autorenew, 'Redonation', 2),
+          _buildNavItem(Icons.inbox, 'NgoRequests', 1),
           _buildNavItem(Icons.person, 'Donorprofile', 2),
           _buildNavItem(Icons.chat, 'feedback', 3),
           _buildNavItem(Icons.person, 'NGOProfile', 4),
-          _buildNavItem(Icons.person, 'Reports', 5),
+          _buildNavItem(Icons.bar_chart, 'Reports', 5),
         ],
       ),
     );

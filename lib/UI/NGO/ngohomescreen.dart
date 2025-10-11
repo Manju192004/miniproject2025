@@ -45,10 +45,10 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     if (user != null) {
       final uid = user.uid;
 
-      // 1. Check in NGOREG collection (Prioritized for this screen based on your DB image)
+      // 1. Check in NGOREG collection
       fetchedName = await _getNameFromCollection(uid, 'ngoreg');
 
-      // 2. Check other collections only if the name wasn't found in 'ngoreg'
+      // 2. Check other collections only if not found
       if (fetchedName == null) {
         fetchedName = await _getNameFromCollection(uid, 'donor');
       }
@@ -56,7 +56,6 @@ class _HomeScreenState extends State<NgoHomeScreen> {
       if (fetchedName == null) {
         fetchedName = await _getNameFromCollection(uid, 'admin');
       }
-
     }
 
     // Update state once, with the best name found or a fallback
@@ -66,7 +65,8 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     });
 
     if (userName == "User") {
-      debugPrint("Warning: User is null or UID not found in 'ngoreg', 'donor', or 'admin' collections, or the 'name' field is missing.");
+      debugPrint(
+          "Warning: User is null or UID not found in 'ngoreg', 'donor', or 'admin' collections, or the 'name' field is missing.");
     }
   }
 
@@ -75,16 +75,37 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.green,
       appBar: AppBar(
-        title: const Text(
-          "Excess Food Sharing",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: const  Text(
+          "Excess Food Share",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green,
-        elevation: 0,
+        centerTitle: true,
+
+
       ),
+
+
+      // ✅ BODY START
       body: Column(
         children: [
-          // Welcome Section
+          // 🟩 NGO Home Page Bar
+          Container(
+            width: double.infinity,
+            color: Colors.green,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: const Center(
+              child: Text(
+                "NGO Home Page",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+
+          // 👋 Welcome Section
           Container(
             color: Colors.green,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -93,10 +114,7 @@ class _HomeScreenState extends State<NgoHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  // Display the name directly
-                  isLoading
-                      ? "Loading..."
-                      : "Welcome back, ${userName!}",
+                  isLoading ? "Loading..." : "Welcome back, ${userName!}",
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -114,7 +132,8 @@ class _HomeScreenState extends State<NgoHomeScreen> {
               ],
             ),
           ),
-          // List Section
+
+          // 🧾 List Section
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -174,10 +193,6 @@ class _HomeScreenState extends State<NgoHomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        // onTap: () {
-        //   // Handle navigation here (e.g., Navigator.push for the respective screen)
-        //   debugPrint('$label tapped');
-        // },
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         decoration: BoxDecoration(
           color: Colors.white,

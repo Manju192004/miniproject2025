@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:project/UI/Login/login.dart';
+
+// Make sure this path is correct
 
 /// Reports Dashboard Screen
 class ReportsScreen extends StatelessWidget {
@@ -19,6 +22,12 @@ class ReportsScreen extends StatelessWidget {
         elevation: 0,
         toolbarHeight: 80,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _showLogoutDialog(context),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -63,6 +72,8 @@ class ReportsScreen extends StatelessWidget {
         _buildMetricCard("NGOs", "ngoreg", Icons.group_work, Colors.orange),
         _buildMetricCard("Total Donations", "adddonation", Icons.fastfood, Colors.green),
         _buildMetricCard("Completed Pickups", "adddonation", Icons.check_circle, Colors.teal,
+            isCompletedCount: true),
+        _buildMetricCard("Pending Requests", "adddonation", Icons.pending_actions, Colors.amber,
             isCompletedCount: true),
         _buildMetricCard("Feedbacks", "feedback", Icons.feedback, Colors.purple),
       ],
@@ -211,7 +222,6 @@ class ReportsScreen extends StatelessWidget {
               barGroups: _getBarGroups(donationsByDay),
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  // tooltipBgColor: Colors.green.shade800,
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     return BarTooltipItem(
                       rod.toY.toInt().toString(),
@@ -292,6 +302,35 @@ class ReportsScreen extends StatelessWidget {
     return SideTitleWidget(
       axisSide: AxisSide.bottom,
       child: Text(text, style: style),
+    );
+  }
+
+  // =========================================================================
+  // Logout Dialog
+  // =========================================================================
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to exit?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(), // Close dialog
+            child: const Text("No"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop(); // Close dialog
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
     );
   }
 }

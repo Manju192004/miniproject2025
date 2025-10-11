@@ -39,46 +39,39 @@ class Donation {
   factory Donation.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
 
-    // Safely parse quantity which is stored as String (e.g., "10plates")
     int _extractQuantity(dynamic value) {
       if (value is int) return value;
       if (value is String) {
         final RegExp digitRegex = RegExp(r'\d+');
         final match = digitRegex.firstMatch(value);
-        // Extracts the number part and attempts to parse it
         return int.tryParse(match?.group(0) ?? '') ?? 0;
       }
       return 0;
     }
 
-    // Safely parse timestamp
     DateTime _parseTimestamp(dynamic timestamp) {
       if (timestamp is Timestamp) {
         return timestamp.toDate();
       }
-      // Use FieldValue.serverTimestamp() or document creation time as fallback
       if (doc.metadata.hasPendingWrites) {
         return DateTime.now();
       }
-      // Use a default/earliest time if timestamp is missing
       return DateTime(2000);
     }
 
     return Donation(
-      id: doc.id, // 💡 Capture the document ID
+      id: doc.id,
       foodName: data['foodName'] ?? 'N/A',
       quantity: _extractQuantity(data['quantity']),
       status: data['status'] ?? 'Pending',
-      // We use 'timestamp' field from adddonation for the donation date
       date: _parseTimestamp(data['timestamp']),
-      // Assuming 'acceptedByNgoName' might be set when an admin approves/accepts
       acceptedByNgo: data['acceptedByNgoName'],
     );
   }
 }
 
 // =========================================================================
-// 2. DonorDonationStatusScreen (Uses StreamBuilder with client-side sorting)
+// 2. DonorDonationStatusScreen (With added App Name container)
 // =========================================================================
 class DonorDonationStatusScreen extends StatefulWidget {
   const DonorDonationStatusScreen({super.key});
@@ -91,15 +84,10 @@ class DonorDonationStatusScreen extends StatefulWidget {
 class _DonorDonationStatusScreenState
     extends State<DonorDonationStatusScreen> {
 
-  // 🛑 IMPORTANT: Replace this mock ID with the actual authenticated donor's UID.
   final String _currentDonorId = "donor_uid_12345";
-  // final String _currentDonorId = FirebaseAuth.instance.currentUser!.uid;
-
-  // Reference to the 'adddonation' collection
   final CollectionReference<Map<String, dynamic>> _donationsCollection =
   FirebaseFirestore.instance.collection('adddonation');
 
-  /// 🔹 Color for each status
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case "pending":
@@ -117,7 +105,6 @@ class _DonorDonationStatusScreenState
     }
   }
 
-  /// 🔹 Icon for each status
   IconData _statusIcon(String status) {
     switch (status.toLowerCase()) {
       case "pending":
@@ -135,12 +122,11 @@ class _DonorDonationStatusScreenState
     }
   }
 
-  // 💡 NEW: Function to update donation status to 'Completed'
   Future<void> _markAsCompleted(String donationId) async {
     try {
       await _donationsCollection.doc(donationId).update({
         'status': 'Completed',
-        'completionTime': FieldValue.serverTimestamp(), // Optional: record time
+        'completionTime': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
@@ -163,139 +149,161 @@ class _DonorDonationStatusScreenState
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.green,
-        centerTitle: true,
-        title: const Text(
-          "My Donation Status",
-          style: TextStyle(
-              fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-        ),
-      ),
-      // Use StreamBuilder to fetch real-time data from Firestore
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        // QUERY: Filter only by donorId to avoid Composite Index error
-        stream: _donationsCollection
-            .where('donorId', isEqualTo: _currentDonorId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("You haven't made any donations yet."));
-          }
-
-          // 1. Map the Firestore documents to the Donation model
-          final donationsList = snapshot.data!.docs
-              .map((doc) => Donation.fromFirestore(doc))
-              .toList();
-
-          // 2. SORTING: Manually sort the list by date descending (newest first)
-          donationsList.sort((a, b) => b.date.compareTo(a.date));
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: donationsList.length,
-            itemBuilder: (context, index) {
-              final donation = donationsList[index];
-              final statusLower = donation.status.toLowerCase();
-
-              // Determine if the "Mark as Donated" button should appear
-              final bool showCompleteButton =
-                  statusLower == 'pending' ||
-                      statusLower == 'approved' ||
-                      statusLower == 'accepted';
-
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: _statusColor(donation.status).withOpacity(0.2),
-                    child: Icon(
-                      _statusIcon(donation.status),
-                      color: _statusColor(donation.status),
-                    ),
+      backgroundColor: Colors.grey[50],
+      body: Column(
+        children: [
+          // 🟢 HEADER CONTAINER ADDED HERE
+          Container(
+            width: double.infinity,
+            color: Colors.green[700],
+            padding: const EdgeInsets.only(top: 45, bottom: 16),
+            child: Column(
+              children: const [
+                Text(
+                  "Excess Food Share",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
                   ),
-                  title: Text(
-                    donation.foodName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  "My Donation Status",
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.white70,
                   ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Qty: ${donation.quantity} plates",
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      // Display date, formatted to show only the essential parts
-                      Text(
-                        "Date: ${donation.date.toLocal().toString().substring(0, 16)}",
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      // Display accepted NGO only if status is Accepted or Completed
-                      if (donation.acceptedByNgo != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          "Accepted by: ${donation.acceptedByNgo}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+          ),
+
+          // 🔹 StreamBuilder Section (Unchanged)
+          Expanded(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _donationsCollection
+                  .where('donorId', isEqualTo: _currentDonorId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                      child: Text("You haven't made any donations yet."));
+                }
+
+                final donationsList = snapshot.data!.docs
+                    .map((doc) => Donation.fromFirestore(doc))
+                    .toList();
+                donationsList.sort((a, b) => b.date.compareTo(a.date));
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: donationsList.length,
+                  itemBuilder: (context, index) {
+                    final donation = donationsList[index];
+                    final statusLower = donation.status.toLowerCase();
+                    final bool showCompleteButton =
+                        statusLower == 'pending' ||
+                            statusLower == 'approved' ||
+                            statusLower == 'accepted';
+
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor:
+                          _statusColor(donation.status).withOpacity(0.2),
+                          child: Icon(
+                            _statusIcon(donation.status),
                             color: _statusColor(donation.status),
                           ),
                         ),
-                      ],
-
-                      // 💡 Mark as Donated Button Logic
-                      if (showCompleteButton)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: SizedBox(
-                            height: 30,
-                            child: ElevatedButton.icon(
-                              // Pass the donation's document ID to the update function
-                              onPressed: () => _markAsCompleted(donation.id),
-                              icon: const Icon(Icons.check, size: 16),
-                              label: const Text("Mark as Donated", style: TextStyle(fontSize: 12)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.lightGreen,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                        title: Text(
+                          donation.foodName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Qty: ${donation.quantity} plates",
+                                style: const TextStyle(fontSize: 13)),
+                            Text(
+                              "Date: ${donation.date.toLocal().toString().substring(0, 16)}",
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            if (donation.acceptedByNgo != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                "Accepted by: ${donation.acceptedByNgo}",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _statusColor(donation.status),
+                                ),
                               ),
+                            ],
+                            if (showCompleteButton)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: SizedBox(
+                                  height: 30,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () =>
+                                        _markAsCompleted(donation.id),
+                                    icon: const Icon(Icons.check, size: 16),
+                                    label: const Text(
+                                      "Mark as Donated",
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.lightGreen,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _statusColor(donation.status).withOpacity(0.1),
+                            border: Border.all(color: _statusColor(donation.status)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            donation.status,
+                            style: TextStyle(
+                              color: _statusColor(donation.status),
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _statusColor(donation.status).withOpacity(0.1),
-                      border: Border.all(color: _statusColor(donation.status)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      donation.status,
-                      style: TextStyle(
-                        color: _statusColor(donation.status),
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

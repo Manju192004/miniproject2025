@@ -102,7 +102,7 @@ class _HomeScreenState extends State<AdminHomeScreen> {
                 Text(
                   isLoading
                       ? "Loading..."
-                      : "Welcome back, $userName",
+                      : "Welcome back,",
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -135,17 +135,10 @@ class _HomeScreenState extends State<AdminHomeScreen> {
                 children: [
                   _buildListItem(
                     context,
-                    label: "ViewRequest",
-                    icon: Icons.remove_red_eye,
+                    label: "NgoRequests",
+                    icon: Icons.inbox,
                     iconColor: Colors.black,
                     circleColor: Colors.yellow,
-                  ),
-                  _buildListItem(
-                    context,
-                    label: "Redonation",
-                    icon: Icons.autorenew,
-                    iconColor: Colors.black,
-                    circleColor: Colors.orange,
                   ),
                   _buildListItem(
                     context,
@@ -165,6 +158,13 @@ class _HomeScreenState extends State<AdminHomeScreen> {
                     context,
                     label: "NgoProfile",
                     icon: Icons.person,
+                    iconColor: Colors.white,
+                    circleColor: Colors.blue,
+                  ),
+                  _buildListItem(
+                    context,
+                    label: "Reports",
+                    icon: Icons.bar_chart,
                     iconColor: Colors.white,
                     circleColor: Colors.blue,
                   ),
