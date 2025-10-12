@@ -157,7 +157,8 @@ class NgoProfileScreen extends StatelessWidget {
     // Get current user UID
     final user = FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
+   /* return Scaffold(
+
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
@@ -167,10 +168,42 @@ class NgoProfileScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         elevation: 0,
         toolbarHeight: 80,
-        centerTitle: false,
+        centerTitle: true,
         // No actions needed here, as the logout button is in the body
+      ),*/return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        elevation: 0,
+        toolbarHeight: 90, // increase height to fit two lines
+        centerTitle: true,
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Sharing",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4), // spacing between title and subtitle
+            Text(
+              "NGO Profile",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: user == null
+
+
+    body: user == null
           ? const Center(child: Text("No user logged in"))
           : FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance

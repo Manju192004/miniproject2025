@@ -24,7 +24,7 @@ class FeedbackScreen extends StatelessWidget {
     return data != null && data.containsKey(field) ? data[field]?.toString() ?? fallback : fallback;
   }
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -32,8 +32,39 @@ class FeedbackScreen extends StatelessWidget {
         backgroundColor: Colors.green, // 🟢 Changed to Green
         elevation: 0,
         foregroundColor: Colors.white,
+      ),*/
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,   // centers the column
+        toolbarHeight: 90,   // extra height to fit two lines
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4), // spacing between main title and subtitle
+            Text(
+              "Feedback",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+  body: StreamBuilder<QuerySnapshot>(
         // 1. Stream from the 'feedback' collection
         stream: FirebaseFirestore.instance.collection('feedback').snapshots(),
         builder: (context, snapshot) {

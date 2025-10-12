@@ -9,8 +9,39 @@ import 'package:project/UI/Login/login.dart';
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,   // centers the column
+        toolbarHeight: 90,   // extra height to fit two lines
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4), // spacing between main title and subtitle
+            Text(
+              "Donation Reports",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),*/@override
+  /*Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -21,7 +52,38 @@ class ReportsScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         elevation: 0,
         toolbarHeight: 80,
-        centerTitle: true,
+        centerTitle: true,*/
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          backgroundColor: Colors.green,
+          centerTitle: true,   // centers the column
+          toolbarHeight: 90,   // extra height to fit two lines
+          title: Column(
+            children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+              SizedBox(height: 4), // spacing between main title and subtitle
+              Text(
+                "Donation Reports",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

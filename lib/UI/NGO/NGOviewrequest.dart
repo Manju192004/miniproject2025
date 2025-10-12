@@ -100,9 +100,34 @@ class NGOViewRequestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("NGODonationRequest"),
         backgroundColor: Colors.green,
+        centerTitle: true,
+        toolbarHeight: 90,// centers the whole column
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                fontSize: 24,
+              ),
+            ),
+            SizedBox(height: 20), // small spacing between title and subtitle
+            Text(
+              "DonationRequest",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
+
+
       // Uses StreamBuilder to get ALL documents in real-time
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         // Explicitly cast the stream type

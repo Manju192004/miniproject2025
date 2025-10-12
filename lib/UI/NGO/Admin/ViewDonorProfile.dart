@@ -47,7 +47,7 @@ class DonorProfileScreen extends StatelessWidget {
     }
   }
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -55,8 +55,39 @@ class DonorProfileScreen extends StatelessWidget {
         backgroundColor: Colors.green,
         elevation: 0,
         foregroundColor: Colors.white,
+      ),*/@override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,   // centers the column
+        toolbarHeight: 90,   // extra height for two lines
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4), // spacing between main title and subtitle
+            Text(
+              "Donor Profile",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+
+
+  body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('donor').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

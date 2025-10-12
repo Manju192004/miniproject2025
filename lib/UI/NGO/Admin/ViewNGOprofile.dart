@@ -87,8 +87,38 @@ class NGOProfileScreen extends StatelessWidget {
       ),
     );
   }
-
   @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,   // centers the Column
+        toolbarHeight: 90,   // extra height to fit both lines
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4), // spacing between main title and subtitle
+            Text(
+              "NGO Profile",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+ /* @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -96,7 +126,7 @@ class NGOProfileScreen extends StatelessWidget {
         backgroundColor: Colors.green, // 🟢 Color changed to Green
         elevation: 0,
         foregroundColor: Colors.white,
-      ),
+      ),*/
       // StreamBuilder fetches ALL documents from the 'ngoreg' collection
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('ngoreg').snapshots(),

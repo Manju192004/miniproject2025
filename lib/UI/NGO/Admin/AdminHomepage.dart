@@ -82,6 +82,7 @@ class _HomeScreenState extends State<AdminHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.green,
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           "Excess Food Sharing",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -102,7 +103,7 @@ class _HomeScreenState extends State<AdminHomeScreen> {
                 Text(
                   isLoading
                       ? "Loading..."
-                      : "Welcome back,",
+                      : "Welcome back",
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,

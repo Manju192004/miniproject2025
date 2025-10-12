@@ -130,14 +130,46 @@ class _AdminViewRequestsScreenState extends State<AdminViewRequestsScreen> {
     }
   }
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text('NGO Requests'),
+      ),*/
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,  // centers the Column
+        toolbarHeight: 90,  // extra height to fit two lines
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4),  // spacing between title and subtitle
+            Text(
+              "NGO Requests",
+              style: TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+
+
+  body: StreamBuilder<QuerySnapshot>(
         stream: _ngoRequests.snapshots(), // Stream ALL requests
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

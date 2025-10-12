@@ -74,18 +74,49 @@ class RequestStatus extends StatelessWidget {
         .where('ngoId', isEqualTo: currentNgoId) // FILTER APPLIED HERE
         .snapshots();
 
-    return Scaffold(
+    /*return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text(
-          'Excess Food\nRequest Status',
+          'Excess Food share\nRequest Status',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white70,),
         ),
         centerTitle: true,
         toolbarHeight: 90,
+      ),*/
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,
+        toolbarHeight: 90, // optional, makes AppBar taller
+        title: Column(
+          children: const [
+            Text(
+              "Excess Food Share",
+              style: TextStyle(
+                fontSize: 24,           // main title font size
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            SizedBox(height: 4),       // spacing between title and subtitle
+            Text(
+              "Request Status",
+              style: TextStyle(
+                fontSize: 16,           // subtitle font size
+                fontWeight: FontWeight.normal,
+                color: Colors.white70,  // lighter color for nav text
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+
+
+    body: StreamBuilder<QuerySnapshot>(
         stream: requestStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

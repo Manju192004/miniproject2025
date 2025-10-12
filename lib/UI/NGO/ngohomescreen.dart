@@ -69,22 +69,129 @@ class _HomeScreenState extends State<NgoHomeScreen> {
           "Warning: User is null or UID not found in 'ngoreg', 'donor', or 'admin' collections, or the 'name' field is missing.");
     }
   }
-
   @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          "Excess Food Share",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+        backgroundColor: Colors.green,
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // Welcome Container
+          Container(
+            color: Colors.green,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isLoading ? "Loading..." : "Welcome back, ${userName ?? ''}",
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Your kindness feeds hope.",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          /* @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Container(
+            color: Colors.green,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Column(
+              children: const [
+                Text(
+                  "Excess Food Share",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: 7),
+                Text(
+                  "NGO Home",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),*/
+
+
+  /*@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green,
       appBar: AppBar(
         title: const  Text(
           "Excess Food Share",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,letterSpacing: 0.5,),
+          ),
         backgroundColor: Colors.green,
         centerTitle: true,
 
 
       ),
-
+body: Column(
+      children: [
+        // ✅ Your welcome container
+        Container(
+          color: Colors.green,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isLoading ? "Loading..." : "Welcome back, ${userName!}",
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Your kindness feeds hope.",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
 
       // ✅ BODY START
       body: Column(
@@ -98,14 +205,14 @@ class _HomeScreenState extends State<NgoHomeScreen> {
               child: Text(
                 "NGO Home Page",
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white70,
                   fontSize: 16,
                 ),
               ),
             ),
           ),
 
-          // 👋 Welcome Section
+           👋 Welcome Section
           Container(
             color: Colors.green,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -131,7 +238,7 @@ class _HomeScreenState extends State<NgoHomeScreen> {
                 ),
               ],
             ),
-          ),
+          ),*/
 
           // 🧾 List Section
           Expanded(
