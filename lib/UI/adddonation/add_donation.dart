@@ -88,6 +88,16 @@ class _AddDonationFormState extends State<AddDonationForm> {
         return;
       }
 
+      if (_bestBefore == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select best before date and time.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       setState(() => _isSubmitting = true);
 
       try {
@@ -98,7 +108,7 @@ class _AddDonationFormState extends State<AddDonationForm> {
           'foodName': _foodNameController.text.trim(),
           'quantity': _quantityController.text.trim(),
           'foodType': _foodType,
-          'bestBefore': _bestBefore,
+          'bestBefore': _bestBefore, // DateTime object (will be stored as Timestamp in Firestore)
           'deliveryMethod': _deliveryMethod,
           'phoneNumber': _phoneController.text.trim(),
           'pickupAddress': _addressController.text.trim(),
@@ -154,7 +164,6 @@ class _AddDonationFormState extends State<AddDonationForm> {
   Widget _buildAppHeader() {
     return Container(
       width: double.infinity,
-     // padding: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.only(top: 45, bottom: 16),
       color: Colors.green[700],
       child: Column(

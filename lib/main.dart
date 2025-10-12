@@ -8,13 +8,18 @@ import 'package:project/Reusable/color.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:project/UI/SplashScreen/splash_screen.dart';
 import 'firebase_options.dart'; // ✅ Required for FirebaseOptions
+import 'package:project/UI/adddonation/expired_donation_cleanup.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await ExpiredDonationCleanup().cleanupExpiredDonations();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
